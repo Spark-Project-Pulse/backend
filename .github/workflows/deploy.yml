@@ -49,16 +49,16 @@ jobs:
       run: |
         docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}
 
-    # Step 4: Deploy directly to Cloud Run with custom configurations
+    # Step 8: Deploy directly to Cloud Run with custom configurations
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy pulse-backend \
-          --image "${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}" \
-          --region us-east4 \
+          --image="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}" \
+          --region="${{ secrets.REGION }}" \
           --platform managed \
           --ingress internal-and-cloud-load-balancing \
           --no-cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
           --port 8080 \
-          --set-env-vars SECRET_KEY=${{ secrets.SECRET_KEY }}
+          --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}"
