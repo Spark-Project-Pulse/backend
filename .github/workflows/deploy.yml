@@ -56,7 +56,6 @@ jobs:
           --image "${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}" \
           --region us-east4 \
           --platform managed \
-          --allow-unauthenticated=false \
           --ingress internal-and-cloud-load-balancing \
           --no-cpu-throttling \
           --min-instances 1 \
