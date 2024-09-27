@@ -1,6 +1,10 @@
 # Use an official Python runtime as a base image
 FROM python:3.10-slim
 
+# Set environment variables
+ENV PYTHONUNBUFFERED 1
+ENV PORT 8080
+
 # Set the working directory in the container
 WORKDIR /app
 
