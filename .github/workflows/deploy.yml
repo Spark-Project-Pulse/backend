@@ -58,7 +58,6 @@ jobs:
           --platform managed \
           --allow-unauthenticated=false \
           --ingress internal-and-cloud-load-balancing \
-          --set-cloudsql-instances YOUR_INSTANCE_CONNECTION_NAME \
           --no-cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
