@@ -60,7 +60,6 @@ jobs:
           --no-cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
-          --service-account ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} \
           --vpc-egress all \
           --port 8080
           --set-env-vars SECRET_KEY=${{ secrets.SECRET_KEY }}
