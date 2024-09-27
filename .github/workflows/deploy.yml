@@ -1,4 +1,4 @@
-name: Deploy to Google Cloud Run
+name: Deploy Backend to Google Cloud Run
 
 on:
   push:
@@ -14,33 +14,55 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Step 2: Set up Google Cloud SDK
+    # Step 2: Authenticate to Google Cloud
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    # Step 3: Set up Google Cloud SDK
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
-        service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-        export_default_credentials: true
 
-    # Step 3: Build the Docker image locally (no push to GCR)
-    - name: Build Docker image
+    # Step 4: Configure Docker to use gcloud as a credential helper
+    - name: Configure Docker for GAR
       run: |
-        docker build -t my-app .
+        gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
+
+    # Step 5: Create Docker repository in Artifact Registry (if it doesn't exist)
+    - name: Create Artifact Registry Repository
+      run: |
+        gcloud artifacts repositories create pulse-backend \
+          --repository-format=docker \
+          --location=${{ secrets.REGION }} \
+          --description="Docker repository for pulse-backend" || echo "Repository already exists."
+
+    # Step 6: Build Docker image for backend
+    - name: Build Docker image for backend
+      run: |
+        docker build -t ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} .
+
+    # Step 7: Push Docker image to Google Artifact Registry
+    - name: Push Docker image to Google Artifact Registry
+      run: |
+        docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}
 
     # Step 4: Deploy directly to Cloud Run with custom configurations
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy my-app \
-          --image "my-app" \
+        gcloud run deploy pulse-backend \
+          --image "${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}" \
           --region us-east4 \
           --platform managed \
-          --allow-unauthenticated=false \  # Disables public access to the API
-          --ingress internal-and-cloud-load-balancing \  # Restrict ingress to internal traffic and cloud load balancing
-          --set-cloudsql-instances YOUR_INSTANCE_CONNECTION_NAME \  # Optionally restrict ingress traffic further
-          --no-cpu-throttling \  # Ensure CPU is allocated only during request processing
-          --min-instances 1 \  # Set minimum number of instances to 1
-          --max-instances 10 \  # Adjust based on your scaling needs
+          --allow-unauthenticated=false \
+          --ingress internal-and-cloud-load-balancing \
+          --set-cloudsql-instances YOUR_INSTANCE_CONNECTION_NAME \
+          --no-cpu-throttling \
+          --min-instances 1 \
+          --max-instances 10 \
           --service-account ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} \
           --vpc-egress all \
-          --port 8080  # Port 8080 is the set port by Google Cloud Run
-          --set-env-vars SECRET_KEY=${{ secrets.SECRET_KEY }}  # Pass Django SECRET_KEY to Cloud Run
+          --port 8080
+          --set-env-vars SECRET_KEY=${{ secrets.SECRET_KEY }}
