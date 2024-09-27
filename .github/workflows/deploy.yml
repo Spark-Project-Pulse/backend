@@ -60,6 +60,5 @@ jobs:
           --no-cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
-          --vpc-egress all \
           --port 8080
           --set-env-vars SECRET_KEY=${{ secrets.SECRET_KEY }}
