@@ -56,9 +56,12 @@ jobs:
           --image="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}" \
           --region="${{ secrets.REGION }}" \
           --platform managed \
-          --ingress internal-and-cloud-load-balancing \
+          --allow-unauthenticated \
           --no-cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
           --port 8080 \
           --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}"
+          
+      # TODO: eventually we need to have some sort of API authentication (instead of this -->) --ingress internal-and-cloud-load-balancing \
+      # specifically, we should deal with the "allow-unauthenticated" tag with a better strategy
