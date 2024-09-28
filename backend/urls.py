@@ -17,8 +17,11 @@ Including another URLconf
 # from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path
+from . import views
 
 urlpatterns = [
     path('', lambda request: HttpResponse('Hello, World!')),
+    path('test_supabase_get/', views.test_supabase_get, name='test_supabase_get'),
+    path('test_supabase_set/', views.test_supabase_set, name='test_supabase_set'),
     # path('admin/', admin.site.urls),
 ]
