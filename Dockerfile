@@ -13,7 +13,9 @@ WORKDIR /app
 COPY Pipfile Pipfile.lock ./
 
 # Install Pipenv and the project dependencies
-RUN pip install --no-cache-dir pipenv && pipenv install --deploy --ignore-pipfile
+RUN pip install --no-cache-dir pipenv && \
+    pipenv install --system --deploy --ignore-pipfile && \
+    pip install gunicorn
 
 # Copy the entire project code into the container
 COPY . .
