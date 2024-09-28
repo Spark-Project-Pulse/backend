@@ -24,4 +24,5 @@ EXPOSE 8080
 
 # Set the default command to run the Django app using Gunicorn, 
 # binding to the dynamic PORT provided by Google Cloud Run.
-CMD ["pipenv", "run", "gunicorn", "--bind", "0.0.0.0:${PORT:-8080}", "backend.wsgi:application"]
+# CMD ["pipenv", "run", "gunicorn", "--bind", "0.0.0.0:${PORT:-8080}", "backend.wsgi:application"]
+CMD exec pipenv run gunicorn --bind 0.0.0.0:${PORT:-8080} backend.wsgi:application
