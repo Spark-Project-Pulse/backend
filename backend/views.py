@@ -1,6 +1,10 @@
 from django.http import JsonResponse
 from .supabase_utils import get_supabase_client
 
+def hello_world(request):
+    return JsonResponse({"status": "success", "message": "Hello world, welcome to Pulse!"}, status=200)
+
+
 # Example: Fetch data from a table called 'test_table'
 def test_supabase_get(request):
     supabase = get_supabase_client()
