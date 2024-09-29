@@ -38,7 +38,7 @@ media/
 *.coverage.*
 
 # Editor and IDE settings
-.vscode/
+.vscode/*
 .idea/
 .spyderproject
 .spyproject
