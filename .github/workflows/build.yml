@@ -1,0 +1,20 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Build Docker image for backend
+    - name: Build Docker image for backend
+      run: |
+        docker build -t test-backend-image .
