@@ -23,14 +23,16 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 # Useful for managing database via a web interface
-# INSTALLED_APPS = [
-#     'django.contrib.admin',
-#     'django.contrib.contenttypes',  
-#     'django.contrib.auth',
-# ]
+INSTALLED_APPS = [
+    # 'django.contrib.admin',
+    # 'django.contrib.contenttypes',  
+    # 'django.contrib.auth',
+    'corsheaders',
+]
 
 # Security settings
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

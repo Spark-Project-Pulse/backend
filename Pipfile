@@ -8,6 +8,7 @@ django = "*"
 gunicorn = "*"
 python-dotenv = "*"
 supabase = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
