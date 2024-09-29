@@ -56,13 +56,16 @@ jobs:
           --image="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}" \
           --region="${{ secrets.REGION }}" \
           --platform managed \
-          --ingress internal-and-cloud-load-balancing \
-          --no-allow-unauthenticated \
+          --allow-unauthenticated \
           --no-cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
           --port 8080 \
           --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}"
+
+      # TODO: add these settings back
+      # --ingress internal-and-cloud-load-balancing \
+      # --no-allow-unauthenticated \
     
     # Step 9: Grant frontend service account permission to invoke the backend
     - name: Grant Frontend Invoker Permissions
