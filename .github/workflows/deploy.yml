@@ -62,7 +62,7 @@ jobs:
           --min-instances 1 \
           --max-instances 10 \
           --port 8080 \
-          --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}"
+          --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}" \
           --set-env-vars CORS_ALLOWED_ORIGIN="${{ secrets.CORS_ALLOWED_ORIGIN }}"
 
       # TODO: add these settings back
