@@ -58,7 +58,7 @@ jobs:
           --platform managed \
           --ingress all \
           --allow-unauthenticated \
-          --no-cpu-throttling \
+          --cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
           --port 8080 \
