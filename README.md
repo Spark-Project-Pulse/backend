@@ -33,10 +33,10 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-<h3 align="center">project_title</h3>
+<h3 align="center">Pulse</h3>
 
   <p align="center">
-    project_description
+    [Description goes here]
     <br />
     <a href="https://github.com/Spark-Project-Pulse/backend"><strong>Explore the docs »</strong></a>
     <br />
@@ -125,7 +125,7 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    git clone https://github.com/Spark-Project-Pulse/backend.git
    ```
-2. `cd` into `backend` folder and create `.env.local` file
+2. Navigate to `backend` folder and create `.env.local` file
    ``` env
    SECRET_KEY=<your-django-secret-key>
    SUPABASE_URL=<your-Supabase-url>
@@ -136,12 +136,11 @@ This is an example of how to list things you need to use the software and how to
 
 #### Docker 
 1. Make sure the Docker daemon is running (open Docker Desktop)
-2. Create a file called ```.env.local``` within the base backend directory
-3. Use this command to run the project locally:
+2. Use this command to run the project locally:
    ``` bash
    docker compose up --build
    ```
-4. Navigate to `http://localhost:8080` to view the project
+3. Navigate to `http://localhost:8080` to view the project
 
 #### Django
 1. **Install Pipenv** (if not already installed):
