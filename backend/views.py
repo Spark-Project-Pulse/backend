@@ -12,14 +12,14 @@ def test_supabase_get(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-# Example: Put data into a table called 'test-table'
-def test_supabase_set(request):
-    supabase = get_supabase_client()
+# # Example: Put data into a table called 'test-table'
+# def test_supabase_set(request):
+#     supabase = get_supabase_client()
     
-    try:
-        data = { "id": 3, "name": "testing"}
+#     try:
+#         data = { "id": 3, "name": "testing"}
         
-        response = supabase.table("test_table").insert(data).execute()
-        return JsonResponse({"status": "success", "data": response.data})
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+#         response = supabase.table("test_table").insert(data).execute()
+#         return JsonResponse({"status": "success", "data": response.data})
+#     except Exception as e:
+#         return JsonResponse({"status": "error", "message": str(e)}, status=500)
