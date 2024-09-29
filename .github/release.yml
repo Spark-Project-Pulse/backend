@@ -10,14 +10,10 @@ changelog:
         - feature
     - title: Bug Fixes 🛠️
       labels:
-        - bug
         - fix
-        - issue resolved
     - title: Enhancements ✨
       labels:
-        - improvement
-        - optimization
-        - performance
+        - enhancement
     - title: Breaking Changes 🔥
       labels:
         - breaking change
