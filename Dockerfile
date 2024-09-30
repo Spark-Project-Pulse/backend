@@ -14,8 +14,7 @@ COPY Pipfile Pipfile.lock ./
 
 # Install Pipenv and the project dependencies
 RUN pip install --no-cache-dir pipenv && \
-    pipenv install --system --deploy --ignore-pipfile && \
-    pipenv install supabase
+    pipenv install --system --deploy --ignore-pipfile
 
 # Copy the entire project code into the container
 COPY . .
