@@ -1,10 +1,9 @@
 # urls/question_urls.py
 from django.urls import path
-from ..views.question_views import (
-    getAllQuestions
-)
+from ..views import question_views
 
-# ULR routes for calls relating to questions
+# URL routes for calls relating to questions
 urlpatterns = [
-    path('', getAllQuestions, name='getAllQuestions')
+    path('getAll/', question_views.getAllQuestions, name='getAllQuestions'),
+    path('create/', question_views.createQuestion, name='createQuestion'),
 ]
