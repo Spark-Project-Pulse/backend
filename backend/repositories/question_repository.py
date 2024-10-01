@@ -19,3 +19,11 @@ def get_all_questions():
         return response
     except Exception as e:
         raise Exception(f"Error fetching questions: {str(e)}")
+
+# A function that returns the question matching the question_id stored in the Questions table within Supabase, throws an exception if an error occurs
+def get_question_by_id(question_id):
+    try:
+        response = supabase.table('Questions').select('*').eq('question_id', question_id).execute()
+        return response
+    except Exception as e:
+        raise Exception(f"Error fetching question: {str(e)}")

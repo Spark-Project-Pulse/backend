@@ -22,3 +22,11 @@ def getAllQuestions(request):
         return JsonResponse({"status": "success", "data": response.data})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+# A function that calls the repository layer to get the question mathcing the question_id and returns a JsonResponse based on the result
+def getQuestionById(request, question_id):
+    try:
+        response = question_repository.get_question_by_id(question_id)
+        return JsonResponse({"status": "success", "data": response.data})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
