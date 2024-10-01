@@ -1,4 +1,5 @@
 # views/question_views.py
+import json
 from django.http import JsonResponse
 from ..repositories import question_repository
 
@@ -6,7 +7,7 @@ from ..repositories import question_repository
 def createQuestion(request):
     if request.method == 'POST':
         try:
-            question_data = request.POST.dict()
+            question_data = json.loads(request.body)
             response = question_repository.create_question(question_data)
             return JsonResponse({"status": "success", "data": response.data})
         except Exception as e:

@@ -36,7 +36,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware', #SHOULD PROLLY ENABLE LATER MUST DISCUSS
     # 'django.contrib.auth.middleware.AuthenticationMiddleware', # Useful for managing database via a web interface
 ]
 
