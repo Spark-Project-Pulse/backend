@@ -63,7 +63,14 @@ jobs:
           --max-instances 10 \
           --port 8080 \
           --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-          --set-env-vars CORS_ALLOWED_ORIGIN="${{ secrets.CORS_ALLOWED_ORIGIN }}"
+          --set-env-vars SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          --set-env-vars SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}"
+          --set-env-vars SUPABASE_NAME="${{ secrets.SUPABASE_NAME }}"
+          --set-env-vars SUPABASE_USER="${{ secrets.SUPABASE_USER }}"
+          --set-env-vars SUPABASE_PASSWORD="${{ secrets.SUPABASE_PASSWORD }}"
+          --set-env-vars SUPABASE_HOST="${{ secrets.SUPABASE_HOST }}"
+          --set-env-vars SUPABASE_PORT="${{ secrets.SUPABASE_PORT }}"
+
 
       # TODO: add these settings back
       # --ingress internal-and-cloud-load-balancing \

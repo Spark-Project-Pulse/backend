@@ -8,5 +8,4 @@ from .question_urls import urlpatterns as question_urls
 # All URL routes
 urlpatterns = [
     path('questions/', include(question_urls)),
-    # path('admin/', admin.site.urls),
 ]

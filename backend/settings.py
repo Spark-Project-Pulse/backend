@@ -19,15 +19,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Supabase keys
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+SUPABASE_NAME=os.getenv('SUPABASE_NAME')
+SUPABASE_USER=os.getenv('SUPABASE_USER')
+SUPABASE_PASSWORD=os.getenv('SUPABASE_PASSWORD')
+SUPABASE_HOST=os.getenv('SUPABASE_HOST')
+SUPABASE_PORT=os.getenv('SUPABASE_PORT')
 
 # Useful for managing database via a web interface
 INSTALLED_APPS = [
     # 'django.contrib.admin',
-    # 'django.contrib.contenttypes',  
-    # 'django.contrib.auth',
+    'django.contrib.contenttypes', 
+    'django.contrib.auth',                                  # TODO: eventually check if we can remove this
     'corsheaders',
+    'pulse',
+    'rest_framework',
 ]
 
 # Security settings
@@ -36,9 +41,24 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware', #SHOULD PROLLY ENABLE LATER MUST DISCUSS
     # 'django.contrib.auth.middleware.AuthenticationMiddleware', # Useful for managing database via a web interface
 ]
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': SUPABASE_NAME,
+        'USER': SUPABASE_USER,
+        'PASSWORD': SUPABASE_PASSWORD,
+        'HOST': SUPABASE_HOST,
+        'PORT': SUPABASE_PORT,
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
+}
+
 
 ROOT_URLCONF = 'backend.urls'
 
