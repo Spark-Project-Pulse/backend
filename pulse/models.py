@@ -4,6 +4,9 @@ from django.db import models
 # Things to note:
 # 1. when using ForeignKey rels, Django's ORM automatically appends `_id` to the end of the field name (e.g. expert -> expert_id) in supabase
 #   (you should NOT include `_id` manually at the end of any ForeignKey names)
+
+# 2. however, when using PrimaryKeys (e.g. answer_id), you SHOULD include `_id` at the end of the field name (this is the standard in Django)
+
 # 2. make sure you ONLY make changes to the database schema by editing this file (not the supabase dashboard), then push those changes using:
 #    `python manage.py makemigrations`
 #    `python manage.py migrate`
