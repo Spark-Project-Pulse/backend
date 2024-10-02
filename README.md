@@ -152,6 +152,20 @@ This is an example of how to list things you need to use the software and how to
    python manage.py runserver
    ```
 
+### Working with the database
+
+This project uses a combination of `Django`'s built in **ORM** and `supabase` to store/edit data. In order to **edit/add/remove** any database tables, be sure to follow these steps:
+
+1. Make needed changes to `pulse/models.py`
+2. Stage the migrations:
+   ``` bash
+   python manage.py makemigrations
+   ```
+3. Execute the migrations (**DISCLAIMER:** this will apply changes directly to the hosted database, make sure the changes are correct)
+   ``` bash
+   python manage.py migrate
+   ```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
