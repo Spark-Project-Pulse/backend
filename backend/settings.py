@@ -19,8 +19,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Supabase keys
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+SUPABASE_NAME=os.getenv('SUPABASE_NAME')
+SUPABASE_USER=os.getenv('SUPABASE_USER')
+SUPABASE_PASSWORD=os.getenv('SUPABASE_PASSWORD')
+SUPABASE_HOST=os.getenv('SUPABASE_HOST')
+SUPABASE_PORT=os.getenv('SUPABASE_PORT')
+# SUPABASE_URL = os.getenv('SUPABASE_URL')
+# SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 # Useful for managing database via a web interface
 INSTALLED_APPS = [
@@ -28,6 +33,7 @@ INSTALLED_APPS = [
     # 'django.contrib.contenttypes',  
     # 'django.contrib.auth',
     'corsheaders',
+    'pulse',
 ]
 
 # Security settings
@@ -36,9 +42,25 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware', #SHOULD PROLLY ENABLE LATER MUST DISCUSS
     # 'django.contrib.auth.middleware.AuthenticationMiddleware', # Useful for managing database via a web interface
 ]
+
+
+DATABASES = {
+    'default': {
+        # TODO: make these secrets
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': SUPABASE_NAME,
+        'USER': SUPABASE_USER,
+        'PASSWORD': SUPABASE_PASSWORD,
+        'HOST': SUPABASE_HOST,
+        'PORT': SUPABASE_PORT,
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
+}
+
 
 ROOT_URLCONF = 'backend.urls'
 
