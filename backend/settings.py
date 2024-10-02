@@ -24,16 +24,15 @@ SUPABASE_USER=os.getenv('SUPABASE_USER')
 SUPABASE_PASSWORD=os.getenv('SUPABASE_PASSWORD')
 SUPABASE_HOST=os.getenv('SUPABASE_HOST')
 SUPABASE_PORT=os.getenv('SUPABASE_PORT')
-# SUPABASE_URL = os.getenv('SUPABASE_URL')
-# SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 # Useful for managing database via a web interface
 INSTALLED_APPS = [
     # 'django.contrib.admin',
-    # 'django.contrib.contenttypes',  
-    # 'django.contrib.auth',
+    'django.contrib.contenttypes', 
+    'django.contrib.auth',                                  # TODO: eventually check if we can remove this
     'corsheaders',
     'pulse',
+    'rest_framework',
 ]
 
 # Security settings
@@ -48,7 +47,6 @@ MIDDLEWARE = [
 
 DATABASES = {
     'default': {
-        # TODO: make these secrets
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': SUPABASE_NAME,
         'USER': SUPABASE_USER,

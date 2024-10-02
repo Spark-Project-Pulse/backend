@@ -1,32 +1,36 @@
-# views/question_views.py
-import json
-from django.http import JsonResponse
-from ..repositories import question_repository
+from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse, HttpRequest
+from django.views.decorators.http import require_http_methods
+from rest_framework import status
+from ..models import Questions
+from ..serializers import QuestionSerializer
 
-# A function that calls the repository layer to create a question and returns a JsonResponse based on the result
-def createQuestion(request):
-    if request.method == 'POST':
-        try:
-            question_data = json.loads(request.body)
-            response = question_repository.create_question(question_data)
-            return JsonResponse({"status": "success", "data": response.data})
-        except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    else:
-        return JsonResponse({"status": "error", "message": "Only POST requests are allowed."}, status=400)
-        
-# A function that calls the repository layer to get all questions and returns a JsonResponse based on the result
-def getAllQuestions(request):
-    try:
-        response = question_repository.get_all_questions()
-        return JsonResponse({"status": "success", "data": response.data})
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-# A function that calls the repository layer to get the question mathcing the question_id and returns a JsonResponse based on the result
-def getQuestionById(request, question_id):
-    try:
-        response = question_repository.get_question_by_id(question_id)
-        return JsonResponse({"status": "success", "data": response.data})
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+@api_view(["POST"])
+def createQuestion(request: HttpRequest) -> JsonResponse:
+    """Create a question
+
+    Returns:
+        JsonResponse:
+    """
+    serializer = QuestionSerializer(data=request.data)  # Use request.data for DRF (djang-rest-framework) compatibility
+    if serializer.is_valid():
+        question = serializer.save()  # Save the new question
+        return JsonResponse(
+            {"question_id": question.question_id}, status=status.HTTP_201_CREATED
+        )
+    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+def getAllQuestions(request: HttpRequest) -> JsonResponse:
+    questions = Questions.objects.all()  # Get all questions
+    serializer = QuestionSerializer(questions, many=True)  # Serialize the queryset
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
+    question = get_object_or_404(Questions, question_id=question_id)  # Get the question or return 404
+    serializer = QuestionSerializer(question)  # Serialize the single instance
+    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
