@@ -9,7 +9,7 @@ on:
       - .github/workflows/artifact-policy-deploy.yml
 
 jobs:
-  run-on-file-change:
+  deploy:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
