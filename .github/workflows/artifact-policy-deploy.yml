@@ -25,11 +25,11 @@ jobs:
       with:
         version: 'latest'
 
+    # Might have to change this policy to include a universal prefix if it doesn't work
     - name: Set cleanup policy for Artifact Registry
       run: |
         gcloud artifacts repositories set-cleanup-policies pulse-backend \
           --project=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
           --location=us-east4 \
-          # Might have to change this policy to include a universal prefix if it doesn't work
           --policy=artifact-registry-policy.json \ 
           --no-dry-run
