@@ -14,8 +14,7 @@
         "type": "Keep"
       },
       "mostRecentVersions": {
-        "keepCount": 5,
-        "packageNamePrefixes": ["image-6526e398ac369a907db22f7ec45b5be802464dfe"]
+        "keepCount": 5
       }
     }
   ]
