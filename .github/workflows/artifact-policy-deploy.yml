@@ -1,4 +1,4 @@
-name: Trigger on Specific File Change on Specific Branch
+name: Deploy Artifact Registry Policy
 
 on:
   push:
