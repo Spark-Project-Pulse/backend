@@ -25,7 +25,7 @@ jobs:
       with:
         version: 'latest'
         
-    - name: Run a command when the specific file is changed on the main branch
+    - name: Set cleanup policy for Artifact Registry
       run: |
         gcloud artifacts repositories set-cleanup-policies REPOSITORY-NAME \
           --project=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
