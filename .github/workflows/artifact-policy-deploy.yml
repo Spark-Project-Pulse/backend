@@ -27,7 +27,7 @@ jobs:
         
     - name: Set cleanup policy for Artifact Registry
       run: |
-        gcloud artifacts repositories set-cleanup-policies REPOSITORY-NAME \
+        gcloud artifacts repositories set-cleanup-policies pulse-backend \
           --project=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
           --location=us-east4 \
           --policy=artifact-registry-policy.json \
