@@ -1,0 +1,34 @@
+name: Trigger on Specific File Change on Specific Branch
+
+on:
+  push:
+    branches:
+      - feature/artifact-registry-policy # change to main when merging
+    paths:
+      - artifact-registry-policy.json
+
+jobs:
+  run-on-file-change:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    # Authenticate with Google Cloud
+    - name: Set up Google Cloud authentication
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    - name: Install gcloud CLI
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        version: 'latest'
+        
+    - name: Run a command when the specific file is changed on the main branch
+      run: |
+        gcloud artifacts repositories set-cleanup-policies REPOSITORY-NAME \
+          --project=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
+          --location=us-east4 \
+          --policy=artifact-registry-policy.json \
+          --no-dry-run
