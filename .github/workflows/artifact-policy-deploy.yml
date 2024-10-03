@@ -6,6 +6,7 @@ on:
       - feature/artifact-registry-policy # change to main when merging
     paths:
       - artifact-registry-policy.json
+      - .github/workflows/artifact-policy-deploy.yml
 
 jobs:
   run-on-file-change:
