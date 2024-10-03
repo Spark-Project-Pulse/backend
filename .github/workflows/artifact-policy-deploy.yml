@@ -25,7 +25,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
       with:
         version: 'latest'
-        
+
     - name: Set cleanup policy for Artifact Registry
       run: |
         gcloud artifacts repositories set-cleanup-policies pulse-backend \
