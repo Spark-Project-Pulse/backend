@@ -18,8 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from pulse.views.question_views import getAllQuestions
+
+
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
+    path('api/getAllQuestions/', lambda request: get_all_questions_view(request), name='get_all_questions'),
+    path('', include('pulse.urls.question_urls')),
     path('', include('pulse.urls')),
 ]
+
+def get_all_questions_view(request):
+    from pulse.views.question_views import getAllQuestions 
+    return getAllQuestions(request)
