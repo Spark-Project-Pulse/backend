@@ -17,6 +17,8 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answers
         fields = '__all__'  # or specify the fields you want
+
+        
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Projects
