@@ -40,7 +40,7 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     Returns:
         JsonResponse: A response containing serialized data for all questions.
     """
-    questions = Questions.objects.all()  # Retrieve all Question instances
+    questions = Questions.objects.all().order_by('-created_at')  # Retrieve all Question instances
     serializer = QuestionSerializer(questions, many=True)  # Serialize the queryset to JSON
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
