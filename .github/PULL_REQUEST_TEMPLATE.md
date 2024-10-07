@@ -1,7 +1,9 @@
 ## What does this PR do?
 
-<!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change. -->
+<!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. -->
 
+## PR Dependencies
+<!-- Add the phrases "depends on" or "blocked by" followed the link to the pull request, and the action will make sure to block merging this PR until the dependent PR is closed. See https://github.com/gregsdennis/dependencies-action for details. -->
 
 ## Type of change
 
