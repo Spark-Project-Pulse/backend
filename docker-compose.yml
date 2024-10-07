@@ -1,8 +1,20 @@
 services:
-  backend:
-    build: .
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
     env_file:
-      - .env.local
+      - ../frontend/.env.local
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    command: pipenv run gunicorn --bind 0.0.0.0:8080 backend.wsgi:application
+    env_file:
+      - .env.local

@@ -127,13 +127,15 @@ This is an example of how to list things you need to use the software and how to
 
 ### Run locally
 
-#### Docker 
+#### Docker
 1. Make sure the Docker daemon is running (open Docker Desktop)
-2. Use this command to run the project locally:
+2. Make sure the backend repository is in the same directory as the frontend repository
+3. Use this command to run the project locally:
    ``` bash
    docker compose up --build
    ```
-3. Navigate to `http://localhost:8080` to view the project
+4. Navigate to `http://localhost:8080` to view the project
+5. This will run the frontend and backend in separate containers
 
 #### Django
 1. **Install Pipenv** (if not already installed):
