@@ -10,8 +10,6 @@ if os.getenv('K_SERVICE'):
 else:
     # for local docker and django development
     from .development import *
-    
-print("CORS_ALLOWED_ORIGINS:", CORS_ALLOWED_ORIGINS)
 
 # Base settings shared by all environments below
 
@@ -37,11 +35,11 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 
-# Security settings
+# Security settings (NOTE: order DOES matter)
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware', # Useful for managing database via a web interface
 ]
