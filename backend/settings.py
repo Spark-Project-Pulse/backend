@@ -10,7 +10,7 @@ if os.getenv('K_SERVICE'):
 else:
     # for local docker and django development
     from .development import *
-    
+
 # Base settings shared by all environments below
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,11 +35,11 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 
-# Security settings
+# Security settings (NOTE: order DOES matter)
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware', # Useful for managing database via a web interface
 ]
