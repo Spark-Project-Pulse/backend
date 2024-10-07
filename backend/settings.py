@@ -11,6 +11,8 @@ else:
     # for local docker and django development
     from .development import *
     
+print("CORS_ALLOWED_ORIGINS:", CORS_ALLOWED_ORIGINS)
+
 # Base settings shared by all environments below
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
