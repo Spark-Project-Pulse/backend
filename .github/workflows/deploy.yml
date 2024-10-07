@@ -72,7 +72,6 @@ jobs:
           --set-env-vars SUPABASE_HOST="${{ secrets.SUPABASE_HOST }}" \
           --set-env-vars SUPABASE_PORT="${{ secrets.SUPABASE_PORT }}"
 
-
       # TODO: add these settings back
       # --ingress internal-and-cloud-load-balancing \
       # --no-allow-unauthenticated \
