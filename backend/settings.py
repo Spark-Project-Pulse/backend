@@ -18,7 +18,7 @@ else:
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-CORS_ALLOWED_ORIGINS = ['https://pulse-frontend-704608178414.us-east4.run.app']
+CORS_ALLOWED_ORIGINS = ['https://pulse-frontend-704608178414.us-east4.run.app', 'http://localhost:3000']
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
