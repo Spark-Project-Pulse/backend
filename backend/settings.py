@@ -5,26 +5,18 @@ import os
 from pathlib import Path
 
 # Check if the environment is set to production (K_SERVICE is a Google Cloud Run environment variable)
-IS_PRODUCTION = True#bool(os.getenv('K_SERVICE'))
+IS_PRODUCTION = bool(os.getenv('K_SERVICE'))
 
-DEBUG=False
-
-ALLOWED_HOSTS = ["*"]
-
-# if IS_PRODUCTION:
-#     from .production import *
-# else:
-#     # for local docker and django development
-#     from .development import *
+if IS_PRODUCTION:
+    from .production import *
+else:
+    # for local docker and django development
+    from .development import *
 
 # Base settings shared by all environments below
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# CORS_ALLOWED_ORIGINS = ['https://pulse-frontend-704608178414.us-east4.run.app', 'http://localhost:3000']
-
-CORS_ALLOW_ALL_ORIGINS = True
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
@@ -35,11 +27,9 @@ SUPABASE_PASSWORD=os.getenv('SUPABASE_PASSWORD')
 SUPABASE_HOST=os.getenv('SUPABASE_HOST')
 SUPABASE_PORT=os.getenv('SUPABASE_PORT')
 
-# Useful for managing database via a web interface
 INSTALLED_APPS = [
-    # 'django.contrib.admin',
     'django.contrib.contenttypes', 
-    'django.contrib.auth',                                  # TODO: eventually check if we can remove this
+    'django.contrib.auth', # TODO: eventually check if we can remove this
     'corsheaders',
     'pulse',
     'rest_framework',
@@ -51,10 +41,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-
     # 'django.contrib.auth.middleware.AuthenticationMiddleware', # Useful for managing database via a web interface
 ]
-
 
 DATABASES = {
     'default': {
@@ -65,18 +53,16 @@ DATABASES = {
         'HOST': SUPABASE_HOST,
         'PORT': SUPABASE_PORT,
         'OPTIONS': {
-            'sslmode': 'require' if IS_PRODUCTION else 'prefer',
+            'sslmode': DATABASE_OPTIONS_SSLMODE
         },
     }
 }
-
 
 ROOT_URLCONF = 'backend.urls'
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 # Internationalization (https://docs.djangoproject.com/en/5.0/topics/i18n/)
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -86,5 +72,4 @@ USE_I18N = True
 USE_TZ = True
 
 # Default primary key field type (https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field)
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
