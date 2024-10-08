@@ -61,7 +61,7 @@ jobs:
           --cpu-throttling \
           --min-instances 1 \
           --max-instances 10 \
-          --port 8080 \
+          --port 8000 \
           --set-env-vars SECRET_KEY="${{ secrets.SECRET_KEY }}" \
           --set-env-vars SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
           --set-env-vars SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
