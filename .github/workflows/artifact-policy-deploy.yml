@@ -3,7 +3,7 @@ name: Deploy Artifact Registry Policy
 on:
   push:
     branches:
-      - feature/artifact-registry-policy # change to main when merging
+      - main
     paths:
       - artifact-registry-policy.json
       - .github/workflows/artifact-policy-deploy.yml
