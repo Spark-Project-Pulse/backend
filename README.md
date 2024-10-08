@@ -139,6 +139,22 @@ To ensure they will be available in production and consistent across all environ
 
 ### Run locally
 
+#### Prequisites
+
+In order to run the backend locally, you must ensure that you have installed the Supabase CLI and started the database:
+
+1. Install [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started)
+2. Make sure the Docker daemon is running (open Docker Desktop)
+3. Start supabase db
+   ``` bash
+   supabase start
+   ```
+4. Proceed to running the backend (note that all db updates will only be saved on your machine)
+5. Stop supabase when finished
+   ``` bash
+   supabase stop
+   ```
+
 #### Docker 
 ##### Running the backend
 1. Make sure the Docker daemon is running (open Docker Desktop)
@@ -185,7 +201,7 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    ``` bash
    python manage.py makemigrations
    ```
-3. Execute the migrations (**DISCLAIMER:** this will apply changes directly to the hosted database, make sure the changes are correct)
+3. Execute the migrations (**DISCLAIMER:** this will NOT apply changes directly to the hosted database, they will only be applied locally, and will take effect in the hosted database when your PR is merged into `main`)
    ``` bash
    python manage.py migrate
    ```
