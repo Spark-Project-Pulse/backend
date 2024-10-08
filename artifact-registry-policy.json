@@ -7,7 +7,7 @@
     "mostRecentVersions": {
     "keepCount": 5
     }
-  }
+  },
   {
     "name": "delete-versions-other-than-latest-5",
     "action": {
@@ -17,5 +17,5 @@
     "tagState": "ANY",
     "olderThan": "1s"
     }
-  },
+  }
 ]
