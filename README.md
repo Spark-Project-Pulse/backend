@@ -163,7 +163,7 @@ In order to run the backend locally, you must ensure that you have installed the
    ``` bash
    docker compose up --build
    ```
-4. Navigate to `http://localhost:8080/questions/getAll` to see an example of an API response
+4. Navigate to `http://localhost:8000/questions/getAll` to see an example of an API response
 
 ##### Running the frontend & backend in one command
 1. Make sure the Docker daemon is running (open Docker Desktop)
