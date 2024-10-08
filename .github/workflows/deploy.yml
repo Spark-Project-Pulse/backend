@@ -75,8 +75,26 @@ jobs:
       # TODO: add these settings back
       # --ingress internal-and-cloud-load-balancing \
       # --no-allow-unauthenticated \
+
+    # Step 9: Run Migrations on the Production Database
+    - name: Run Migrations
+      env:
+        SUPABASE_NAME: ${{ secrets.SUPABASE_NAME }}
+        SUPABASE_USER: ${{ secrets.SUPABASE_USER }}
+        SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+        SUPABASE_HOST: ${{ secrets.SUPABASE_HOST }}
+        SUPABASE_PORT: ${{ secrets.SUPABASE_PORT }}
+      run: |
+        docker run --rm \
+        -e SUPABASE_NAME=$SUPABASE_NAME \
+        -e SUPABASE_USER=$SUPABASE_USER \
+        -e SUPABASE_PASSWORD=$SUPABASE_PASSWORD \
+        -e SUPABASE_HOST=$SUPABASE_HOST \
+        -e SUPABASE_PORT=$SUPABASE_PORT \
+        ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
+        pipenv run python manage.py migrate
     
-    # Step 9: Grant frontend service account permission to invoke the backend
+    # Step 10: Grant frontend service account permission to invoke the backend
     - name: Grant Frontend Invoker Permissions
       run: |
         gcloud run services add-iam-policy-binding pulse-backend \
