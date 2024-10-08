@@ -4,8 +4,10 @@
 import os
 from pathlib import Path
 
-# Check to see if the environment is set to production (K_SERVICE is a Google Cloud Run environment variable)
-if os.getenv('K_SERVICE'):
+# Check if the environment is set to production (K_SERVICE is a Google Cloud Run environment variable)
+IS_PRODUCTION = bool(os.getenv('K_SERVICE'))
+
+if IS_PRODUCTION:
     from .production import *
 else:
     # for local docker and django development
@@ -54,7 +56,7 @@ DATABASES = {
         'HOST': SUPABASE_HOST,
         'PORT': SUPABASE_PORT,
         'OPTIONS': {
-            'sslmode': 'require',
+            'sslmode': 'require' if IS_PRODUCTION else 'prefer',
         },
     }
 }
