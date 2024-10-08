@@ -1,20 +1,21 @@
 services:
-  frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    env_file:
-      - ../frontend/.env.local
-
   backend:
     build:
-      context: ../backend
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     env_file:
       - .env.local
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        ENV_FILE: ".env.development"
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../frontend/.env.local
+    profiles:
+      - frontend-and-backend

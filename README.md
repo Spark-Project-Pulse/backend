@@ -118,12 +118,12 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    git clone https://github.com/Spark-Project-Pulse/backend.git
 
-### Secret Management
+### Secret Management (This section is in progress, please ignore for now. It got merged with another fix)
 #### Accessing Secrets locally
 1. Add a `.env.local` file to the root of the project with the following contents:
 ``` bash
-GOOGLE_CLIENT_ID=your_google_client_id
-GCP_SEVICE_ACCOUNT=your_gcp_service_account
+GOOGLE_CLOUD_PROJECT=your_google_client_id
+GCP_SERVICE_ACCOUNT_KEY=your_gcp_service_account
 ```
 2. Download the service account key from Google Cloud Console and save it as `service-account-key.json` in the root of the project. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and create a new service account. Download the key and save it as `service-account-key.json` in the root of the project.
 3. Use the get_secret function in `pulse/utils.py` to access secrets stored in Google Secret Manager. The function takes the secret name as an argument and returns the secret value.
@@ -145,17 +145,17 @@ To ensure they will be available in production and consistent across all environ
 2. Navigate to the backend repository
 3. Use this command to build and run the backend container:
    ``` bash
-   docker compose up backend --build
+   docker compose up --build
    ```
 4. Navigate to `http://localhost:8080/questions/getAll` to see an example of an API response
 
-##### Running the frontend & backend
+##### Running the frontend & backend in one command
 1. Make sure the Docker daemon is running (open Docker Desktop)
 2. Navigate to the backend repository
 3. Make sure the backend repository is in the same directory as the frontend repository
 4. Use this command to run the project locally:
    ``` bash
-   docker compose up --build
+   docker compose --profile frontend-and-backend up --build
    ```
 5. This will run the frontend and backend in separate containers
 
