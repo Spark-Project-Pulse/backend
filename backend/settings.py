@@ -5,20 +5,26 @@ import os
 from pathlib import Path
 
 # Check if the environment is set to production (K_SERVICE is a Google Cloud Run environment variable)
-IS_PRODUCTION = bool(os.getenv('K_SERVICE'))
+IS_PRODUCTION = True#bool(os.getenv('K_SERVICE'))
 
-if IS_PRODUCTION:
-    from .production import *
-else:
-    # for local docker and django development
-    from .development import *
+DEBUG=False
+
+ALLOWED_HOSTS = ["*"]
+
+# if IS_PRODUCTION:
+#     from .production import *
+# else:
+#     # for local docker and django development
+#     from .development import *
 
 # Base settings shared by all environments below
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-CORS_ALLOWED_ORIGINS = ['https://pulse-frontend-704608178414.us-east4.run.app', 'http://localhost:3000']
+# CORS_ALLOWED_ORIGINS = ['https://pulse-frontend-704608178414.us-east4.run.app', 'http://localhost:3000']
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
