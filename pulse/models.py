@@ -17,6 +17,7 @@ class Answers(models.Model):
     question = models.ForeignKey('Questions', on_delete=models.CASCADE, blank=True, null=True)          # should delete answer if question is deleted
     response = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    delete_me_pls_god = models.TextField(null=True)
 
     class Meta:
         db_table = 'Answers'
