@@ -1,0 +1,35 @@
+name: Deploy Artifact Registry Policy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - artifact-registry-policy.json
+      - .github/workflows/artifact-policy-deploy.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Google Cloud authentication
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    - name: Install gcloud CLI
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        version: 'latest'
+
+    # Might have to change this policy to include a universal prefix if it doesn't work
+    - name: Set cleanup policy for Artifact Registry
+      run: |
+        gcloud artifacts repositories set-cleanup-policies pulse-backend \
+          --project=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
+          --location=${{ secrets.REGION }} \
+          --policy=artifact-registry-policy.json \
+          --no-dry-run
