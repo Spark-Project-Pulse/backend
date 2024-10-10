@@ -55,8 +55,12 @@ def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
     Returns:
         JsonResponse: A response indicating whether the user exists.
     """
-    exists = Users.objects.filter(user_id=user_id).exists()  # Check if user exists
-
-    if exists:
-        return JsonResponse({"exists": True}, status=status.HTTP_200_OK)
-    return JsonResponse({"exists": False}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        exists = Users.objects.filter(user_id=user_id).exists()  # Check if the user exists
+        return JsonResponse({"exists": exists}, status=status.HTTP_200_OK)  # Return a 200 OK response with a boolean result
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An error occurred", "details": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )  # Log the error and return a 500 response for unexpected errors
+        
