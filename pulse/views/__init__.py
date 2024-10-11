@@ -2,3 +2,4 @@
 
 # In order to have seperate views files, django requires this file and to import the views here:
 from .question_views import *
+from .user_views import *

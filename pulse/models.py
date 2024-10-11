@@ -47,7 +47,7 @@ class Questions(models.Model):
 
 
 class Users(models.Model):
-    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField('AuthUser', on_delete=models.CASCADE, primary_key=True, default=uuid.uuid4)
     username = models.TextField(unique=True)
     pfp_url = models.TextField(blank=True, null=True)
     reputation = models.BigIntegerField()
@@ -55,3 +55,11 @@ class Users(models.Model):
     class Meta:
         db_table = 'Users'
 
+class AuthUser(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Add any other fields that are needed in the Supabase auth table
+
+    class Meta:
+        managed = False  # Indicating that Django should not manage this table
+        db_table = 'auth"."users'
+    
