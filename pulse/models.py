@@ -29,7 +29,7 @@ class Projects(models.Model):
     title = models.TextField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    tags = models.ManyToManyField('Tags', related_name='projects')  # Many-to-Many with Tags
+    tags = models.ManyToManyField('Tags', related_name='projects', blank=True)  # Many-to-Many with Tags
 
     class Meta:
         db_table = 'Projects'
@@ -42,7 +42,7 @@ class Questions(models.Model):
     title = models.TextField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    tags = models.ManyToManyField('Tags', related_name='questions')  # Many-to-Many with Tags
+    tags = models.ManyToManyField('Tags', related_name='questions', blank=True) # Many-to-Many with Tags
 
     class Meta:
         db_table = 'Questions'
