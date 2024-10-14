@@ -2,10 +2,17 @@ from google.auth import exceptions as auth_exceptions
 from google.cloud import secretmanager
 import os
 
-def get_secret(secret_name):
+def get_secret(secret_name, is_production):
     """Fetch a secret from Google Secret Manager using a service account key file locally or the default service account in Cloud Run."""
-    
     try:
+        # Modify secret name based on environment
+        if is_production:
+            secret_name += "_PRODUCTION"
+        elif os.getenv('DOCKER_LOCAL'):
+            secret_name += "_LOCAL_DOCKER"
+        else:
+            secret_name += "_LOCAL"
+        
         # Access Google Secret Manager
         client = secretmanager.SecretManagerServiceClient()
         
