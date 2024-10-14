@@ -57,3 +57,6 @@ desktop.ini
 htmlcov/
 .coverage
 .coverage.*
+
+# Google Cloud Service Account Key
+pulse-*.json
