@@ -29,6 +29,7 @@ class Projects(models.Model):
     title = models.TextField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    repo_full_name = models.TextField(null=True)
     tags = models.ManyToManyField('Tags', related_name='projects', blank=True)  # Many-to-Many with Tags
 
     class Meta:
