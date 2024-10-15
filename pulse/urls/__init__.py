@@ -15,5 +15,5 @@ urlpatterns = [
     path('projects/', include(project_urls)),
     path('questions/', include(question_urls)),
     path('users/', include(user_urls)),
-    path('tags/', include (tag_urls))
+    path('tags/', include (tag_urls)),
 ]
