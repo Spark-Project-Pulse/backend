@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+from services.secret_manager import get_secret
 
 # Check if the environment is set to production (K_SERVICE is a Google Cloud Run environment variable)
 IS_PRODUCTION = bool(os.getenv('K_SERVICE'))
@@ -18,14 +19,14 @@ else:
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = get_secret('SECRET_KEY')
 
 # Supabase keys
-SUPABASE_NAME=os.getenv('SUPABASE_NAME')
-SUPABASE_USER=os.getenv('SUPABASE_USER')
-SUPABASE_PASSWORD=os.getenv('SUPABASE_PASSWORD')
-SUPABASE_HOST=os.getenv('SUPABASE_HOST')
-SUPABASE_PORT=os.getenv('SUPABASE_PORT')
+SUPABASE_NAME=get_secret('SUPABASE_NAME')
+SUPABASE_USER=get_secret('SUPABASE_USER')
+SUPABASE_PASSWORD=get_secret('SUPABASE_PASSWORD')
+SUPABASE_HOST=get_secret('SUPABASE_HOST')
+SUPABASE_PORT=get_secret('SUPABASE_PORT')
 
 INSTALLED_APPS = [
     'django.contrib.contenttypes', 
