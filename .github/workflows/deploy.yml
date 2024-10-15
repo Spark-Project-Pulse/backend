@@ -68,8 +68,8 @@ jobs:
     # Step 10: Run Migrations on the Production Database
 
     - name: Set up SA Key for next step
-      run : |
-        echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} > /tmp/gcp-key.json
+      run: |
+        echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_BASE64 }} | base64 -d > /tmp/gcp-key.json  
 
     - name: Run Migrations
       run: |
