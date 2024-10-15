@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Answers, Questions, Projects, Users, Tags
+from .models import Answers, Questions, Projects, Users, Comments, Tags
 
 # NOTE: Each model should have a corresponding serializer to handle validation and
 # conversion of incoming data, as well as serializing outgoing data to be
@@ -30,3 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = '__all__'
+        
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comments
+        fields = '__all__' 

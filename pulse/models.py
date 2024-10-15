@@ -29,6 +29,7 @@ class Projects(models.Model):
     title = models.TextField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    repo_full_name = models.TextField(null=True)
     tags = models.ManyToManyField('Tags', related_name='projects', blank=True)  # Many-to-Many with Tags
 
     class Meta:
@@ -75,3 +76,13 @@ class AuthUser(models.Model):
     class Meta:
         managed = False  # Indicating that Django should not manage this table
         db_table = 'auth"."users'
+    
+class Comments(models.Model):
+    comment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    expert = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)               # don't delete comment if user is removed (just make anon)
+    answer = models.ForeignKey('Answers', on_delete=models.CASCADE, blank=True, null=True)          # should delete comment if answer is deleted
+    response = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Comments'
