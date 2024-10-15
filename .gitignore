@@ -60,3 +60,6 @@ htmlcov/
 
 # Google Cloud Service Account Key
 pulse-*.json
+
+# GitHub Actions Secrets for local testing
+*.Secrets
