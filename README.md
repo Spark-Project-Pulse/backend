@@ -118,24 +118,36 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    git clone https://github.com/Spark-Project-Pulse/backend.git
 
-### Secret Management (This section is in progress, please ignore for now. It got merged with another fix)
+### Secret Management
 #### Accessing Secrets locally
-1. Add a `.env.local` file to the root of the project with the following contents:
+1. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and and download the already existing json key from the service acount called Secret Accessor Service Account. Download the key and save it as `pulse-some-combination-of-numbers.json` in the root of the project.
+2. Add a `.env.local` file to the root of the project with the following contents:
 ``` bash
-GOOGLE_CLOUD_PROJECT=your_google_client_id
-GCP_SERVICE_ACCOUNT_KEY=your_gcp_service_account
+GOOGLE_CLOUD_PROJECT=google_cloud_project_id
+GCP_SERVICE_ACCOUNT_KEY=pulse-some-combination-of-numbers.json
 ```
-2. Download the service account key from Google Cloud Console and save it as `service-account-key.json` in the root of the project. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and create a new service account. Download the key and save it as `service-account-key.json` in the root of the project.
-3. Use the get_secret function in `pulse/utils.py` to access secrets stored in Google Secret Manager. The function takes the secret name as an argument and returns the secret value.
+3. Use the `get_secret` function in `services/secret_manager.py` to access secrets stored in Google Secret Manager locally. The function takes the secret name as an argument and returns the secret value.
+
 
 #### Updating Secrets
 To ensure they will be available in production and consistent across all environments and between developers, secrets should be stored in Google Secret Manager. To update a secret:
 1. Navigate to the Google Cloud Console
-2. Select the project `spark-project-pulse`
+2. Select the project `Pulse`
 3. Navigate to `Secret Manager`
 4. Select the secret you want to update
-5. Click `Edit`
+5. Click `Edit Secret`
 6. Update the secret value
+
+#### Creating New Secrets
+For the frontend, there are three kinds of secrets: local, local docker, and  production. When creating a new secret, make sure to add the local version by appending `_LOCAL`, the local docker version by append `_LOCAL_DOCKER` to the secret name, and the production version by appending `_PRODUCTION` to the secret name. Even if the secret is the same for all environments, it should be added for each environment to ensure that the secret is available in all environments. The get_secret function handles the logic of which secret to return based on the environment, so after adding the secret to Google Secret Manager, it should be accessible via the function.
+#### Steps for creating a new secret via the Google Cloud Console UI:
+1. Navigate to the Google Cloud Console
+2. Select the project `Pulse`
+3. Navigate to `Secret Manager`
+4. Select the secret you want to update
+5. Click `Create Secret`
+6. Enter the secret's name and value
+7. Click `Create Secret`
 
 ### Run locally
 

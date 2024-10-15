@@ -19,14 +19,14 @@ else:
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = get_secret('SECRET_KEY', IS_PRODUCTION)
+SECRET_KEY = get_secret('SECRET_KEY')
 
 # Supabase keys
-SUPABASE_NAME=get_secret('SUPABASE_NAME', IS_PRODUCTION)
-SUPABASE_USER=get_secret('SUPABASE_USER', IS_PRODUCTION)
-SUPABASE_PASSWORD=get_secret('SUPABASE_PASSWORD', IS_PRODUCTION)
-SUPABASE_HOST=get_secret('SUPABASE_HOST', IS_PRODUCTION)
-SUPABASE_PORT=get_secret('SUPABASE_PORT', IS_PRODUCTION)
+SUPABASE_NAME=get_secret('SUPABASE_NAME')
+SUPABASE_USER=get_secret('SUPABASE_USER')
+SUPABASE_PASSWORD=get_secret('SUPABASE_PASSWORD')
+SUPABASE_HOST=get_secret('SUPABASE_HOST')
+SUPABASE_PORT=get_secret('SUPABASE_PORT')
 
 INSTALLED_APPS = [
     'django.contrib.contenttypes', 
