@@ -19,5 +19,7 @@ services:
       - "3000:3000"
     env_file:
       - ../frontend/.env.local
+    environment:
+      - DOCKER_LOCAL=true
     profiles:
       - frontend-and-backend
