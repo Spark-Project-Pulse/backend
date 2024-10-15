@@ -14,24 +14,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Step 2: Authenticate to Google Cloud
+    # Step 2: Set up Google Cloud credentials file
+    - name: Set up Google Cloud credentials file
+      env:
+        GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      run: |
+        echo "$GCP_SERVICE_ACCOUNT_KEY" > /tmp/gcp-key.json
+
+    # Step 3: Authenticate to Google Cloud
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        credentials_json: /tmp/gcp-key.json
 
-    # Step 3: Set up Google Cloud SDK
+    # Step 4: Set up Google Cloud SDK
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
 
-    # Step 4: Configure Docker to use gcloud as a credential helper
+    # Step 5: Configure Docker to use gcloud as a credential helper
     - name: Configure Docker for GAR
       run: |
         gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
 
-    # Step 5: Create Docker repository in Artifact Registry (if it doesn't exist)
+    # Step 6: Create Docker repository in Artifact Registry (if it doesn't exist)
     - name: Create Artifact Registry Repository
       run: |
         gcloud artifacts repositories create pulse-backend \
@@ -39,17 +46,17 @@ jobs:
           --location=${{ secrets.REGION }} \
           --description="Docker repository for pulse-backend" || echo "Repository already exists."
 
-    # Step 6: Build Docker image for backend
+    # Step 7: Build Docker image for backend
     - name: Build Docker image for backend
       run: |
         docker build -t ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} .
 
-    # Step 7: Push Docker image to Google Artifact Registry
+    # Step 8: Push Docker image to Google Artifact Registry
     - name: Push Docker image to Google Artifact Registry
       run: |
         docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}
 
-    # Step 8: Deploy directly to Cloud Run with custom configurations
+    # Step 9: Deploy directly to Cloud Run with custom configurations
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy pulse-backend \
@@ -63,19 +70,17 @@ jobs:
           --max-instances 10 \
           --port 8000
 
-      # TODO: add these settings back
-      # --ingress internal-and-cloud-load-balancing \
-      # --no-allow-unauthenticated \
-
-    # Step 9: Run Migrations on the Production Database
-    # Set the K_SERVICE environment variable to "foo" so that the container recognizes
-    # to run as if it's running in production
+    # Step 10: Run Migrations on the Production Database
     - name: Run Migrations
+      env:
+        K_SERVICE: "foo"
+        GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
       run: |
         docker run --rm \
-        -e K_SERVICE=foo \
-        -e ${{ secrets.GOOGLE_CLOUD_PROJECT }} \
-        -e ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} \
+        -e K_SERVICE=$K_SERVICE \
+        -e GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT \
+        -e GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS \
         ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
         python manage.py migrate
 
