@@ -74,8 +74,8 @@ jobs:
       run: |
         docker run --rm \
         -e K_SERVICE=foo \
-        -e ${{ secrets.GOOGLE_CLOUD_PROJECT }}
-        -e ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        -e ${{ secrets.GOOGLE_CLOUD_PROJECT }} \
+        -e ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} \
         ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
         python manage.py migrate
 
