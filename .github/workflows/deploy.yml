@@ -1,5 +1,7 @@
 name: Deploy Backend to Google Cloud Run
 
+# remove the hotfix branch when merging the hotfix branch to main
+
 on:
   push:
     branches:
@@ -63,17 +65,26 @@ jobs:
           --min-instances 0 \
           --max-instances 10 \
           --port 8000
-
     # Step 10: Run Migrations on the Production Database
+
+    - name: Set up SA Key for next step
+      run : |
+        echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} > /tmp/gcp-key.json
+
     - name: Run Migrations
       run: |
-        echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} > /tmp/gcp-key.json &&
         docker run --rm \
         -e K_SERVICE=foo \
         -e GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
         -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json \
         ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
         python manage.py migrate
+
+    - name: Debugging Info
+      run: |
+        env
+        ls -l /tmp/
+        cat /tmp/gcp-key.json
 
     # Given the backend is currently allowed to be accessed by anyone, we don't need this in the deployment workflow
     # # Step 10: Grant frontend service account permission to invoke the backend
