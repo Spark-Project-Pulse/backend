@@ -21,11 +21,11 @@ jobs:
       run: |
         echo "$GCP_SERVICE_ACCOUNT_KEY" > /tmp/gcp-key.json
 
-    # Step 3: Authenticate to Google Cloud
+    # Step 2: Authenticate to Google Cloud
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: /tmp/gcp-key.json
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
     # Step 4: Set up Google Cloud SDK
     - name: Set up Cloud SDK
@@ -83,6 +83,7 @@ jobs:
         -e GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS \
         ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
         python manage.py migrate
+
 
     # Given the backend is currently allowed to be accessed by anyone, we don't need this in the deployment workflow
     # # Step 10: Grant frontend service account permission to invoke the backend
