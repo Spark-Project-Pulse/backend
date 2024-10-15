@@ -9,7 +9,7 @@ from .models import Answers, Questions, Projects, Users, Comments, Tags
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tags
-        fields = '__all__'  # Return only the tag name
+        fields = '__all__'
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,7 +25,6 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Questions
         fields = '__all__'
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

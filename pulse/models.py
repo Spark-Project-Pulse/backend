@@ -58,9 +58,6 @@ class Tags(models.Model):
     class Meta:
         db_table = 'Tags'
 
-    def __str__(self):
-        return self.name #returns tag name instead of object id 
-
 
 class Users(models.Model):
     user = models.OneToOneField('AuthUser', on_delete=models.CASCADE, primary_key=True, default=uuid.uuid4)
