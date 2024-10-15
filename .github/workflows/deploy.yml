@@ -79,7 +79,7 @@ jobs:
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           -v /tmp/gcp-key.json:/app/gcp-key.json \
           ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
-          python manage.py migrate
+          python manage.py migrate 
 
     # Given the backend is currently allowed to be accessed by anyone, we don't need this in the deployment workflow
     # # Step 10: Grant frontend service account permission to invoke the backend
