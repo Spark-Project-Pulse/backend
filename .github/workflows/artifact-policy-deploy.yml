@@ -2,8 +2,6 @@ name: Deploy Artifact Registry Policy
 
 on:
   push:
-    branches:
-      - main
     paths:
       - artifact-registry-policy.json
       - .github/workflows/artifact-policy-deploy.yml
@@ -15,10 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
+    # The deployment key also has access to artifact registry (because it needs to)
     - name: Set up Google Cloud authentication
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        credentials_json: ${{ secrets.GCP_DEPLOYMENT_SA_KEY }}
 
     - name: Install gcloud CLI
       uses: google-github-actions/setup-gcloud@v1
