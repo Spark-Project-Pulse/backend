@@ -120,11 +120,11 @@ This is an example of how to list things you need to use the software and how to
 
 ### Secret Management
 #### Accessing Secrets locally
-1. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and and download the already existing json key from the service acount called Secret Accessor Service Account. Download the key and save it as `pulse-some-combination-of-numbers.json` in the root of the project.
+1. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and and download the already existing json key from the service acount called Secret Accessor Service Account. Go to the `Keys` tab and click `Add Key` then `Create New Key` then `Create` (use json format). Your key will download as `pulse-random-letters-and-numbers.json` in the root of the project.
 2. Add a `.env.local` file to the root of the project with the following contents:
 ``` bash
 GOOGLE_CLOUD_PROJECT=google_cloud_project_id
-GCP_SERVICE_ACCOUNT_KEY=pulse-some-combination-of-numbers.json
+GCP_SERVICE_ACCOUNT_KEY=pulse-random-letters-and-numbers.json
 ```
 3. Use the `get_secret` function in `services/secret_manager.py` to access secrets stored in Google Secret Manager locally. The function takes the secret name as an argument and returns the secret value.
 
@@ -135,8 +135,8 @@ To ensure they will be available in production and consistent across all environ
 2. Select the project `Pulse`
 3. Navigate to `Secret Manager`
 4. Select the secret you want to update
-5. Click `Edit Secret`
-6. Update the secret value
+5. Click `Delete` to delete the secret
+6. Now recreate the secret with the new value (I am aware this is kind of a pain, but I haven't researched how versions work yet)
 
 #### Creating New Secrets
 For the frontend, there are three kinds of secrets: local, local docker, and  production. When creating a new secret, make sure to add the local version by appending `_LOCAL`, the local docker version by append `_LOCAL_DOCKER` to the secret name, and the production version by appending `_PRODUCTION` to the secret name. Even if the secret is the same for all environments, it should be added for each environment to ensure that the secret is available in all environments. The get_secret function handles the logic of which secret to return based on the environment, so after adding the secret to Google Secret Manager, it should be accessible via the function.
