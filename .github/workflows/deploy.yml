@@ -57,7 +57,7 @@ jobs:
           --cpu-throttling \
           --min-instances 0 \
           --max-instances 10 \
-          --port 8000
+          --port 8000 \
           --set-env-vars GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
 
     # TODO: Separate this step into its own workflow (I think that's a good idea because it isn't technically necessary for cloud deployment?)
