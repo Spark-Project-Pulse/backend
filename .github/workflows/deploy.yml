@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - hotfix/migration-script-typo
 
 jobs:
   deploy:
