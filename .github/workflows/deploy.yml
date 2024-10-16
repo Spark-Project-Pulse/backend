@@ -1,5 +1,7 @@
 name: Deploy Backend to Google Cloud Run
 
+# remove the hotfix branch when merging the hotfix branch to main
+
 on:
   push:
     branches:
@@ -10,46 +12,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Step 2: Authenticate to Google Cloud
+    # The service account in this step only has access to Google Cloud Run (it needs to be used to run gcloud commands)
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        credentials_json: ${{ secrets.GCP_DEPLOYMENT_SA_KEY }}
 
-    # Step 4: Set up Google Cloud SDK
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
 
-    # Step 5: Configure Docker to use gcloud as a credential helper
-    - name: Configure Docker for GAR
+    # Step 4: Configure Docker to use gcloud as a credential helper
+    - name: Configure Docker for Google Artifact Registry
       run: |
         gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
 
-    # Step 6: Create Docker repository in Artifact Registry (if it doesn't exist)
-    - name: Create Artifact Registry Repository
+    - name: Create Artifact Registry Repository (if it doesn't exist)
       run: |
         gcloud artifacts repositories create pulse-backend \
           --repository-format=docker \
           --location=${{ secrets.REGION }} \
           --description="Docker repository for pulse-backend" || echo "Repository already exists."
 
-    # Step 7: Build Docker image for backend
     - name: Build Docker image for backend
       run: |
         docker build -t ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} .
 
-    # Step 8: Push Docker image to Google Artifact Registry
     - name: Push Docker image to Google Artifact Registry
       run: |
         docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }}
 
-    # Step 9: Deploy directly to Cloud Run with custom configurations
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy pulse-backend \
@@ -61,28 +57,25 @@ jobs:
           --cpu-throttling \
           --min-instances 0 \
           --max-instances 10 \
-          --port 8000
-    
-    # Step 2: Set up Google Cloud credentials file
-    - name: Set up Google Cloud credentials file
-      env:
-        GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-      run: |
-        echo "$GCP_SERVICE_ACCOUNT_KEY" > /tmp/gcp-key.json
+          --port 8000 \
+          --set-env-vars GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
 
-    # Step 10: Run Migrations on the Production Database
-    - name: Run Migrations
+    # TODO: Separate this step into its own workflow (I think that's a good idea because it isn't technically necessary for cloud deployment?)
+    # The service account in this step only has access to Google Cloud Secret Manager (the docker image needs to be able to access the secrets)
+    - name: Run Migrations on the production database
       run: |
+        echo ${{ secrets.GCP_SECRET_ACCESSOR_SA_KEY_BASE64 }} | base64 -d > /tmp/gcp-key.json && \
         docker run --rm \
-        -e K_SERVICE=foo \
-        -e GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
-        -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json \
-        ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
-        python manage.py migrate
+          -e K_SERVICE=foo \
+          -e GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
+          -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
+          -v /tmp/gcp-key.json:/app/gcp-key.json \
+          ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
+          python manage.py migrate 
 
     # Given the backend is currently allowed to be accessed by anyone, we don't need this in the deployment workflow
-    # # Step 10: Grant frontend service account permission to invoke the backend
-    # - name: Grant Frontend Invoker Permissions
+    # TODO: Add service account email secret into GitHub Secrets when this step is reapplied
+    # - name: Grant Frontend Invoker Permissions so frontend can access the backend
     #   run: |
     #     gcloud run services add-iam-policy-binding pulse-backend \
     #       --member="serviceAccount:${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}" \
