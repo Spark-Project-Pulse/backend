@@ -120,11 +120,11 @@ This is an example of how to list things you need to use the software and how to
 
 ### Secret Management
 #### Accessing Secrets locally
-1. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and and download the already existing json key from the service acount called Secret Accessor Service Account. Download the key and save it as `pulse-some-combination-of-numbers.json` in the root of the project.
+1. Go to the Google Cloud Console, navigate to `IAM & Admin` > `Service Accounts`, and and download the already existing json key from the service acount called Secret Accessor Service Account. Go to the `Keys` tab and click `Add Key` then `Create New Key` then `Create` (use json format). Your key will download as `pulse-some-combination-of-numbers.json` in the root of the project.
 2. Add a `.env.local` file to the root of the project with the following contents:
 ``` bash
 GOOGLE_CLOUD_PROJECT=google_cloud_project_id
-GCP_SERVICE_ACCOUNT_KEY=pulse-some-combination-of-numbers.json
+GCP_SERVICE_ACCOUNT_KEY=pulse-random-letters-and-numbers.json
 ```
 3. Use the `get_secret` function in `services/secret_manager.py` to access secrets stored in Google Secret Manager locally. The function takes the secret name as an argument and returns the secret value.
 
