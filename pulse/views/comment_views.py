@@ -17,11 +17,9 @@ def createComment(request: HttpRequest) -> JsonResponse:
     serializer = CommentSerializer(data=request.data)  # Use request.data for DRF (djang-rest-framework) compatibility
     if serializer.is_valid():
         comment = serializer.save()  # Save the new comment
-        return JsonResponse(
-            {"comment_id": comment.comment_id,
-             "answer_id": comment.answer_id,
-             "response": comment.response}, status=status.HTTP_201_CREATED
-        )
+        serialized_comment = CommentSerializer(comment)  # Serialize the saved comment
+        return JsonResponse(serialized_comment.data, status=status.HTTP_201_CREATED)  # Return the serialized data
+
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["GET"])
