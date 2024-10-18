@@ -17,10 +17,9 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
     serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF (djang-rest-framework) compatibility
     if serializer.is_valid():
         answer = serializer.save()  # Save the new answer
-        return JsonResponse(
-            {"answer_id": answer.answer_id,
-             "response": answer.response}, status=status.HTTP_201_CREATED
-        )
+        serialized_answer = AnswerSerializer(answer)  # Serialize the saved answer
+        return JsonResponse(serialized_answer.data, status=status.HTTP_201_CREATED)  # Return the serialized data
+
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["GET"])
