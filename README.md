@@ -124,7 +124,7 @@ This is an example of how to list things you need to use the software and how to
 2. Add a `.env.local` file to the root of the project with the following contents:
 ``` bash
 GOOGLE_CLOUD_PROJECT=google_cloud_project_id
-GCP_SERVICE_ACCOUNT_KEY=pulse-random-letters-and-numbers.json
+GOOGLE_APPLICATION_CREDENTIALS=pulse-random-letters-and-numbers.json
 ```
 3. Use the `get_secret` function in `services/secret_manager.py` to access secrets stored in Google Secret Manager locally. The function takes the secret name as an argument and returns the secret value.
 
