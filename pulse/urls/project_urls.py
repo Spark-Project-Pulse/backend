@@ -6,5 +6,6 @@ from ..views import project_views
 urlpatterns = [
     path('create/', project_views.createProject, name='createProject'),
     path('getAll/', project_views.getAllProjects, name='getAllProjects'),
+    path('getByUserId/<str:user_id>/', project_views.getProjectsByUserId, name='getProjectsByUserId'),
     path('getById/<str:project_id>/', project_views.getProjectById, name='getProjectById'),
 ]

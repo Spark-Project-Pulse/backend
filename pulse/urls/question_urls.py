@@ -6,5 +6,6 @@ from ..views import question_views
 urlpatterns = [
     path('create/', question_views.createQuestion, name='createQuestion'),
     path('getAll/', question_views.getAllQuestions, name='getAllQuestions'),
+    path('getByUserId/<str:user_id>/', question_views.getQuestionsByUserId, name='getQuestionsByUserId'),
     path('getById/<str:question_id>/', question_views.getQuestionById, name='getQuestionById'),
 ]

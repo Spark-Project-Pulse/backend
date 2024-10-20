@@ -44,6 +44,22 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     serializer = QuestionSerializer(questions, many=True)  # Serialize the queryset to JSON
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
+@api_view(["GET"])
+def getQuestionsByUserId(request: HttpRequest, user_id: int) -> JsonResponse:
+    """
+    Retrieve all questions associated with a specific user_id
+    from the database and serialize them to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (int): The ID of the user whose questions are to be retrieved.
+
+    Returns:
+        JsonResponse: A response containing serialized data for the user's questions.
+    """
+    questions = Questions.objects.filter(asker_id=user_id).order_by('-created_at')  # Retrieve questions for the specified user
+    serializer = QuestionSerializer(questions, many=True)  # Serialize the queryset to JSON
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:

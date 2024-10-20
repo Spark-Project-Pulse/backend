@@ -6,5 +6,6 @@ from ..views import user_views
 urlpatterns = [
     path('create/', user_views.createUser, name='createUser'),
     path('getById/<str:user_id>/', user_views.getUserById, name='getUserById'),
+    path('getByUsername/<str:username>/', user_views.getUserByUsername, name='getUserByUsername'),
     path('userExists/<str:user_id>/', user_views.userExists, name='getUserById'),
 ]
