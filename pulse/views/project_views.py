@@ -45,6 +45,22 @@ def getAllProjects(request: HttpRequest) -> JsonResponse:
     serializer = ProjectSerializer(project, many=True)
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
+@api_view(["GET"])
+def getProjectsByUserId(request: HttpRequest, user_id: int) -> JsonResponse:
+    """
+    Retrieve all projects associated with a specific user_id
+    from the database and serialize them to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (int): The ID of the user whose projects are to be retrieved.
+
+    Returns:
+        JsonResponse: A response containing serialized data for the user's projects.
+    """
+    projects = Projects.objects.filter(owner_id=user_id).order_by('-created_at')  # Retrieve projects for the specified user
+    serializer = ProjectSerializer(projects, many=True)  # Serialize the queryset to JSON
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getProjectById(request: HttpRequest, project_id: str) -> JsonResponse:

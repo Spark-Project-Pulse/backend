@@ -44,6 +44,22 @@ def getUserById(request: HttpRequest, user_id: str) -> JsonResponse:
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
+def getUserByUsername(request: HttpRequest, username: str) -> JsonResponse:
+    """
+    Retrieve a single user by their username and serialize it to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        username (str): The username of the user to retrieve.
+
+    Returns:
+        JsonResponse: A response containing serialized data for the requested user.
+    """
+    user = get_object_or_404(Users, username=username)  # Get the user or return 404
+    serializer = UserSerializer(user)  # Serialize the single instance to JSON
+    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
 def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
     """
     Check if a user exists in the database by their user ID.
