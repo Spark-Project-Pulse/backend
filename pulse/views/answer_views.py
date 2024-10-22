@@ -48,13 +48,17 @@ def upvoteAnswer(request: HttpRequest) -> JsonResponse:
     # If user has downvoted, switch to upvote
     if existing_vote and existing_vote.vote_type == 'downvote':
         existing_vote.delete()
+        answer.score += 1  # Increment score by 1
+        answer.save()
+        return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     # Record the upvote
     Votes.objects.create(user=user, answer=answer, vote_type='upvote')
+    answer.score += 1  # Increment score by 1
+    answer.save()
 
     # Return the updated vote count
-    new_score = answer.votes_set.filter(vote_type='upvote').count() - answer.votes_set.filter(vote_type='downvote').count()
-    return JsonResponse({"message": "Upvote successful", "new_score": new_score}, status=status.HTTP_200_OK)
+    return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 def downvoteAnswer(request: HttpRequest) -> JsonResponse:
@@ -83,13 +87,17 @@ def downvoteAnswer(request: HttpRequest) -> JsonResponse:
     # If user has upvoted, switch to downvote
     if existing_vote and existing_vote.vote_type == 'upvote':
         existing_vote.delete()
+        answer.score -= 1  # Decrement score by 1
+        answer.save()
+        return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     # Record the downvote
     Votes.objects.create(user=user, answer=answer, vote_type='downvote')
+    answer.score -= 1  # Decrement score by 1
+    answer.save()
 
     # Return the updated vote count
-    new_score = answer.votes_set.filter(vote_type='upvote').count() - answer.votes_set.filter(vote_type='downvote').count()
-    return JsonResponse({"message": "Downvote successful", "new_score": new_score}, status=status.HTTP_200_OK)
+    return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getAnswersByQuestionId(request: HttpRequest, question_id: str) -> JsonResponse:

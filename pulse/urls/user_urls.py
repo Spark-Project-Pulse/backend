@@ -7,6 +7,7 @@ urlpatterns = [
     # POST Requests
     path('create/', user_views.createUser, name='createUser'),
     path('increaseReputationById/<str:user_id>/', user_views.increaseReputation, name='increaseReputationById'),
+    path('decreaseReputationById/<str:user_id>/', user_views.decreaseReputation, name='decreaseReputationById'),
     
     # GET Requests
     path('getById/<str:user_id>/', user_views.getUserById, name='getUserById'),

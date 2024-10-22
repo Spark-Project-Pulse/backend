@@ -52,6 +52,36 @@ def increaseReputation(request: HttpRequest, user_id: str) -> JsonResponse:
             {"error": "Unable to increase reputation", "details": str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+        
+@api_view(["POST"])
+def decreaseReputation(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Decreases the reputation of a user by 1, identified by their user ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user whose reputation should be decreased.
+
+    Returns:
+        JsonResponse: A response indicating the new reputation or an error message.
+    """
+    try:
+        user = get_object_or_404(Users, user_id=user_id)  # Retrieve the user by ID
+        
+        # Check if the user's reputation is already 0
+        if user.reputation > 0:
+            user.reputation -= 1  # Decrease the reputation
+            user.save()  # Save the updated user object
+        
+        return JsonResponse(
+            {"user_id": user.user_id, "new_reputation": user.reputation},
+            status=status.HTTP_200_OK)
+            
+    except Exception as e:
+        return JsonResponse(
+            {"error": "Unable to decrease reputation", "details": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(["GET"])
 def getUserById(request: HttpRequest, user_id: str) -> JsonResponse:
