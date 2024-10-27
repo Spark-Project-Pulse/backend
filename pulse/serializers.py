@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Answers, Questions, Projects, Users, Comments, Tags
+from .models import Answers, Questions, Projects, Users, Comments, Tags, Votes
 
 # NOTE: Each model should have a corresponding serializer to handle validation and
 # conversion of incoming data, as well as serializing outgoing data to be
@@ -58,3 +58,8 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Questions
         fields = '__all__'
 
+class VoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Votes
+        fields = '__all__'
+        

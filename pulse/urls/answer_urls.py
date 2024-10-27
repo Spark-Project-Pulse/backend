@@ -10,5 +10,6 @@ urlpatterns = [
     path('downvote/', answer_views.downvoteAnswer, name='downvoteAnswer'),
     
     # GET Requests
-    path('getAnswersByQuestionId/<str:question_id>/', answer_views.getAnswersByQuestionId, name='getAnswersByQuestionId'),
+     path('getAnswersByQuestionId/<str:question_id>/', answer_views.getAnswersByQuestionId, name='getAnswersByQuestionId'),
+    path('getAnswersByQuestionIdWithUser/<str:question_id>/<str:user_id>/', answer_views.getAnswersByQuestionIdWithUser, name='getAnswersByQuestionIdWithUser'),
 ]
