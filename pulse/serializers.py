@@ -42,6 +42,7 @@ class TagSerializer(serializers.ModelSerializer):
 class QuestionSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the asker as a dictionary, based on the asker_id (for GET requests)
     asker_info = UserSerializer(source='asker', read_only=True)
+    related_project_info = ProjectSerializer(source='related_project', read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     
     class Meta:
