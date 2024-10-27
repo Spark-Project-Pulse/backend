@@ -6,8 +6,7 @@ from ..views import user_views
 urlpatterns = [
     # POST Requests
     path('create/', user_views.createUser, name='createUser'),
-    path('increaseReputationById/<str:user_id>/', user_views.increaseReputation, name='increaseReputationById'),
-    path('decreaseReputationById/<str:user_id>/', user_views.decreaseReputation, name='decreaseReputationById'),
+    path('changeReputationByAmount/<str:user_id>/<str:amount>', user_views.changeReputationByAmount, name='changeReputationByAmount'),
     
     # GET Requests
     path('getById/<str:user_id>/', user_views.getUserById, name='getUserById'),
