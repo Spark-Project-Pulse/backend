@@ -8,4 +8,5 @@ urlpatterns = [
     path('getAll/', question_views.getAllQuestions, name='getAllQuestions'),
     path('getByUserId/<str:user_id>/', question_views.getQuestionsByUserId, name='getQuestionsByUserId'),
     path('getById/<str:question_id>/', question_views.getQuestionById, name='getQuestionById'),
+    path('search/', question_views.search_questions, name='search_questions'),
 ]

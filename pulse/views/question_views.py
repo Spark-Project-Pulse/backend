@@ -1,6 +1,11 @@
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.throttling import UserRateThrottle
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.response import Response
 from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
@@ -76,3 +81,31 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     question = get_object_or_404(Questions, question_id=question_id)  # Get the question or return 404
     serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class BurstRateThrottle(UserRateThrottle):
+    rate = '10/min'
+
+@api_view(['GET'])
+@throttle_classes([BurstRateThrottle])
+def search_questions(request):
+    """
+    Performs a full-text search on Questions based on the query parameter 'q'.
+    """
+    query = request.GET.get('q', '')
+    if not query:
+        return Response({"error": "No search query provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+    search_query = SearchQuery(query)
+    questions = Questions.objects.annotate(
+        rank=SearchRank('search_vector', search_query)
+    ).filter(search_vector=search_query).order_by('-rank', '-created_at')
+
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(questions, request)
+    serializer = QuestionSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
