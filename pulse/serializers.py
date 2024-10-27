@@ -10,6 +10,16 @@ class UserSerializer(serializers.ModelSerializer):
         model = Users
         fields = '__all__'
         
+    def to_representation(self, instance):
+        # Modify the reputation value to be at least 0
+        representation = super().to_representation(instance)
+        
+        # If the reputation is below 0, set it to 0 in the representation
+        if representation.get('reputation', 0) < 0:
+            representation['reputation'] = 0
+        
+        return representation
+        
 class AnswerSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the answerer as a dictionary, based on the expert_id (for GET requests)
     expert_info = UserSerializer(source='expert', read_only=True)

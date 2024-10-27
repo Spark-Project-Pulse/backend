@@ -67,16 +67,12 @@ def decreaseReputation(request: HttpRequest, user_id: str) -> JsonResponse:
     """
     try:
         user = get_object_or_404(Users, user_id=user_id)  # Retrieve the user by ID
-        
-        # Check if the user's reputation is already 0
-        if user.reputation > 0:
-            user.reputation -= 1  # Decrease the reputation
-            user.save()  # Save the updated user object
-        
+        user.reputation -= 1  # Decrease the reputation
+        user.save()  # Save the updated user object
         return JsonResponse(
             {"user_id": user.user_id, "new_reputation": user.reputation},
-            status=status.HTTP_200_OK)
-            
+            status=status.HTTP_200_OK
+        )
     except Exception as e:
         return JsonResponse(
             {"error": "Unable to decrease reputation", "details": str(e)}, 
