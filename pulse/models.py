@@ -1,5 +1,7 @@
 import uuid
 from django.db import models
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import GinIndex
 
 # Things to note:
 # 1. when using ForeignKey rels, Django's ORM automatically appends _id to the end of the field name (e.g. expert -> expert_id) in supabase
@@ -62,8 +64,13 @@ class Questions(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField('Tags', related_name='questions', blank=True) # Many-to-Many with Tags
 
+    search_vector = SearchVectorField(null=True, blank=True) #search
+
     class Meta:
         db_table = 'Questions'
+        indexes = [
+            GinIndex(fields=['search_vector']),  # Create a GIN index on the search_vector field
+        ]
 
 
 class Tags(models.Model):

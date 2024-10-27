@@ -44,15 +44,17 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Projects
         fields = '__all__'
 
-class QuestionSerializer(serializers.ModelSerializer):
-    # This allows us to get the user info of the asker as a dictionary, based on the asker_id (for GET requests)
-    asker_info = UserSerializer(source='asker', read_only=True)
-    
-    class Meta:
-        model = Questions
-        fields = '__all__'
-        
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tags
         fields = '__all__'
+
+class QuestionSerializer(serializers.ModelSerializer):
+    # This allows us to get the user info of the asker as a dictionary, based on the asker_id (for GET requests)
+    asker_info = UserSerializer(source='asker', read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Questions
+        fields = '__all__'
+
