@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Answers, Questions, Projects, Users, Comments, Tags
+from .models import Answers, Questions, Projects, Users, Comments, Tags, Votes
 
 # NOTE: Each model should have a corresponding serializer to handle validation and
 # conversion of incoming data, as well as serializing outgoing data to be
@@ -9,6 +9,16 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = '__all__'
+        
+    def to_representation(self, instance):
+        # Modify the reputation value to be at least 0
+        representation = super().to_representation(instance)
+        
+        # If the reputation is below 0, set it to 0 in the representation
+        if representation.get('reputation', 0) < 0:
+            representation['reputation'] = 0
+        
+        return representation
         
 class AnswerSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the answerer as a dictionary, based on the expert_id (for GET requests)
@@ -48,3 +58,8 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Questions
         fields = '__all__'
 
+class VoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Votes
+        fields = '__all__'
+        
