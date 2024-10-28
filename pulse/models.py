@@ -76,12 +76,8 @@ class Questions(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        self.search_vector = (
-            SearchVector('title', weight='A') +
-            SearchVector('description', weight='B') +
-            SearchVector('tags__name', weight='C') 
-        )
         super().save(*args, **kwargs)
+        self.update_search_vector()
 
     def update_search_vector(self):
         """

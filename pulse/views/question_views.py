@@ -13,9 +13,6 @@ from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.decorators import throttle_classes
 
-
-
-
 @api_view(["POST"])
 def createQuestion(request: HttpRequest) -> JsonResponse:
     """
