@@ -6,12 +6,12 @@ from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.contrib.postgres.search import SearchQuery, SearchRank
-from rest_framework.throttling import UserRateThrottle
 from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.decorators import throttle_classes
+from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Q
 from uuid import UUID
 
