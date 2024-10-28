@@ -98,20 +98,28 @@ class BurstAnonRateThrottle(AnonRateThrottle):
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
 def search_questions(request):
     query = request.GET.get('q', '')
-    if not query:
+    tags = request.GET.getlist('tags')
+
+    if not query and not tags:
         return JsonResponse(
-            {"error": "No search query provided."},
+            {"error": "No search query or tags provided."},
             status=400
         )
 
-    search_query = SearchQuery(query, search_type="websearch")
-    questions = Questions.objects.annotate(
-        rank=SearchRank('search_vector', search_query)
-    ).filter(search_vector=search_query).order_by('-rank', '-created_at')[:10]
+    search_query = SearchQuery(query, search_type="websearch") if query else None
+    questions = Questions.objects.all()
+
+    # Apply full-text search filter if there's a search query
+    if search_query:
+        questions = questions.annotate(
+            rank=SearchRank('search_vector', search_query)
+        ).filter(search_vector=search_query).order_by('-rank', '-created_at')
+
+    if tags:
+        questions = questions.filter(tags__name__in=tags).distinct()
+
+    #Temporary: until pagination is implemented
+    questions = questions[:10]
 
     serializer = QuestionSerializer(questions, many=True)
-    response = {
-        "results": serializer.data
-    }
-    
-    return JsonResponse(response, status=200)
+    return JsonResponse({"results": serializer.data}, status=200)
