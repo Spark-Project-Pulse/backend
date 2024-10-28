@@ -61,8 +61,22 @@ def getUserByUsername(request: HttpRequest, username: str) -> JsonResponse:
     """
     user = get_object_or_404(Users, username=username)  # Get the user or return 404
     serializer = UserSerializer(user)  # Serialize the single instance to JSON
-    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+    response_data = serializer.data
 
+    # Get the profile image URL to see if it exists
+    profile_image_url = user.profile_image_url
+    if profile_image_url:
+        source = f"profile-images/{str(user.user.id)}/profile-image"
+        # Fetch image file
+        image_content = supabase.storage.from_('profile-images').download(source)
+
+        # Convert the image content to a base64-encoded string
+        image_base64 = base64.b64encode(image_content).decode('utf-8')
+        response_data['profile_image'] = {
+            "base64String": image_base64,
+            "fileType": "image/jpeg"
+        }
+    return JsonResponse(response_data, status=status.HTTP_200_OK)
 @api_view(["GET"])
 def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
     """
@@ -161,37 +175,3 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
         return JsonResponse(serializer.data, status=status.HTTP_200_OK)
     else:
         return JsonResponse({"error": "Failed to upload image"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-@api_view(["GET"])
-def getProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
-    """
-    Gets user's profile image using their id
-
-    Args:
-        request (HttpRequest): The incoming HTTP request.
-        user_id (str): The ID of the user to get profile image
-
-    Returns:
-        JsonResponse: A response with the user's profile image (can be null)
-    """
-    try:
-        # Retrieve user or return 404 if not found
-        user = get_object_or_404(Users, user_id=user_id)
-
-        # Get the profile image URL to see if it exists
-        profile_image_url = user.profile_image_url
-        if not profile_image_url:
-            return JsonResponse({"profile_image": None}, status=status.HTTP_200_OK)
-        
-        source = f"profile-images/{user_id}/profile-image"
-        # Fetch image file
-        response = supabase.storage.from_('profile-images').download(source)
-
-        # Convert the image content to a base64-encoded string
-        image_base64 = base64.b64encode(response).decode('utf-8')
-        return JsonResponse({"profile_image": image_base64}) #add image type here
-    except Exception as e:
-        return JsonResponse(
-            {"error": "An error occurred", "details": str(e)}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
