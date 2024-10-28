@@ -1,6 +1,6 @@
 import uuid
 from django.db import models, connection
-from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.search import SearchVectorField, SearchVector
 from django.contrib.postgres.indexes import GinIndex
 
 # Things to note:
@@ -56,7 +56,14 @@ class Questions(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # save first to ensure many to many fields are available
+        def save(self, *args, **kwargs):
+        # Update search_vector with higher weights for title and lower for description
+            self.search_vector = (
+                SearchVector('title', weight='A') +
+                SearchVector('description', weight='B') +  
+                SearchVector('tags', weight='C')
+            )
+        super().save(*args, **kwargs)
         self.update_search_vector()
 
     def update_search_vector(self):

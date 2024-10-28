@@ -1,14 +1,19 @@
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 from django.contrib.postgres.search import SearchQuery, SearchRank
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.throttling import UserRateThrottle
-from rest_framework.decorators import api_view, throttle_classes
-from rest_framework.response import Response
 from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.decorators import throttle_classes
+
+
 
 
 @api_view(["POST"])
@@ -82,30 +87,33 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
-class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
-class BurstRateThrottle(UserRateThrottle):
+class BurstUserRateThrottle(UserRateThrottle):
     rate = '10/min'
 
-@api_view(['GET'])
-@throttle_classes([BurstRateThrottle])
+class BurstAnonRateThrottle(AnonRateThrottle):
+    rate = '5/min'
+
+@require_GET
+@csrf_exempt 
+@throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
 def search_questions(request):
-    """
-    Performs a full-text search on Questions based on the query parameter 'q'.
-    """
     query = request.GET.get('q', '')
     if not query:
-        return Response({"error": "No search query provided."}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse(
+            {"error": "No search query provided."},
+            status=400
+        )
 
-    search_query = SearchQuery(query)
+    # Create the search query and annotate with rank
+    search_query = SearchQuery(query, search_type="websearch")  # websearch for improved query syntax
     questions = Questions.objects.annotate(
         rank=SearchRank('search_vector', search_query)
-    ).filter(search_vector=search_query).order_by('-rank', '-created_at')
+    ).filter(search_vector=search_query).order_by('-rank', '-created_at')[:10]  # Limit to top 10
 
-    paginator = StandardResultsSetPagination()
-    result_page = paginator.paginate_queryset(questions, request)
-    serializer = QuestionSerializer(result_page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+    # Serialize results
+    serializer = QuestionSerializer(questions, many=True)
+    response = {
+        "results": serializer.data
+    }
+    
+    return JsonResponse(response, status=200)
