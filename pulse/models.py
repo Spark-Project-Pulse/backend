@@ -17,12 +17,29 @@ class Answers(models.Model):
     answer_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     expert = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)  # don't delete answer if user is removed (just make anon)
     question = models.ForeignKey('Questions', on_delete=models.CASCADE, blank=True, null=True)  # should delete answer if question is deleted
+    score = models.BigIntegerField(default=0)
     response = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'Answers'
+        
+class Votes(models.Model):
+    # Vote choices for vote type
+    VOTE_CHOICES = [
+        ('upvote', 'Upvote'),
+        ('downvote', 'Downvote'),
+    ] 
 
+    vote_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('Users', on_delete=models.CASCADE)  # Link to the user who voted
+    answer = models.ForeignKey('Answers', on_delete=models.CASCADE)  # Link to the answer being voted on
+    vote_type = models.CharField(max_length=8, choices=VOTE_CHOICES)  # Upvote or Downvote
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Votes'
+        unique_together = ('user', 'answer')
 
 class Projects(models.Model):
     project_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -42,6 +59,9 @@ class Questions(models.Model):
     question_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     asker = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)
     related_project = models.ForeignKey(Projects, on_delete=models.SET_NULL, blank=True, null=True)
+    code_context = models.TextField(blank=True, null=True)
+    code_context_full_pathname = models.TextField(blank=True, null=True)
+    code_context_line_number = models.IntegerField(blank=True, null=True)
     title = models.TextField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

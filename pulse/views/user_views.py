@@ -27,6 +27,34 @@ def createUser(request: HttpRequest) -> JsonResponse:
         )
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(["POST"])
+def changeReputationByAmount(request: HttpRequest, user_id: str, amount: str) -> JsonResponse:
+    """
+    Increase the reputation of a user by the passed in amount, identified by their user ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user whose reputation should be increased.
+        amount (int): The amount of reputation that should change.
+
+    Returns:
+        JsonResponse: A response indicating the new reputation or an error message.
+    """
+    try:
+        user = get_object_or_404(Users, user_id=user_id)  # Retrieve the user by ID
+        amount = int(amount)  # Cast amount to int
+        user.reputation += amount  # Change the reputation
+        user.save()  # Save the updated user object
+        return JsonResponse(
+            {"user_id": user.user_id, "new_reputation": user.reputation},
+            status=status.HTTP_200_OK
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"error": "Unable to change reputation", "details": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(["GET"])
 def getUserById(request: HttpRequest, user_id: str) -> JsonResponse:
     """
