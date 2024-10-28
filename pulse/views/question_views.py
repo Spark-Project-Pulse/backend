@@ -1,9 +1,19 @@
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from rest_framework.throttling import UserRateThrottle
 from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.decorators import throttle_classes
+
+
 
 
 @api_view(["POST"])
@@ -76,3 +86,40 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     question = get_object_or_404(Questions, question_id=question_id)  # Get the question or return 404
     serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+class BurstUserRateThrottle(UserRateThrottle):
+    rate = '10/min'
+
+class BurstAnonRateThrottle(AnonRateThrottle):
+    rate = '5/min'
+
+@require_GET
+@csrf_exempt 
+@throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
+def search_questions(request):
+    query = request.GET.get('q', '')
+    tags = request.GET.getlist('tags')
+
+    if not query and not tags:
+        return JsonResponse(
+            {"error": "No search query or tags provided."},
+            status=400
+        )
+
+    search_query = SearchQuery(query, search_type="websearch") if query else None
+    questions = Questions.objects.all()
+
+    # Apply full-text search filter if there's a search query
+    if search_query:
+        questions = questions.annotate(
+            rank=SearchRank('search_vector', search_query)
+        ).filter(search_vector=search_query).order_by('-rank', '-created_at')
+
+    if tags:
+        questions = questions.filter(tags__name__in=tags).distinct()
+
+    #Temporary: until pagination is implemented
+    questions = questions[:10]
+
+    serializer = QuestionSerializer(questions, many=True)
+    return JsonResponse({"results": serializer.data}, status=200)

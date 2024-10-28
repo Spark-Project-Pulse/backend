@@ -1,6 +1,6 @@
 import uuid
-from django.db import models
-from django.contrib.postgres.search import SearchVectorField
+from django.db import models, connection
+from django.contrib.postgres.search import SearchVectorField, SearchVector
 from django.contrib.postgres.indexes import GinIndex
 
 # Things to note:
@@ -49,7 +49,7 @@ class Projects(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     repo_full_name = models.TextField(null=True)
-    tags = models.ManyToManyField('Tags', related_name='projects', blank=True)  # Many-to-Many with Tags
+    tags = models.ManyToManyField('Tags', related_name='projects', blank=True) 
 
     class Meta:
         db_table = 'Projects'
@@ -65,15 +65,44 @@ class Questions(models.Model):
     title = models.TextField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    tags = models.ManyToManyField('Tags', related_name='questions', blank=True) # Many-to-Many with Tags
+    tags = models.ManyToManyField('Tags', related_name='questions', blank=True)
 
-    search_vector = SearchVectorField(null=True, blank=True) #search
+    search_vector = SearchVectorField(null=True, blank=True)
 
     class Meta:
         db_table = 'Questions'
         indexes = [
-            GinIndex(fields=['search_vector']),  # Create a GIN index on the search_vector field
+            GinIndex(fields=['search_vector']),  # GIN index
         ]
+
+    def save(self, *args, **kwargs):
+        self.search_vector = (
+            SearchVector('title', weight='A') +
+            SearchVector('description', weight='B') +
+            SearchVector('tags__name', weight='C') 
+        )
+        super().save(*args, **kwargs)
+
+    def update_search_vector(self):
+        """
+        Update the search_vector field based on title, description, and tags.
+        """
+        # Aggregate tag names into a single string
+        tag_names = " ".join(self.tags.values_list('name', flat=True))
+        
+        # Combine title, description, and tag names
+        combined_text = f"{self.title} {self.description} {tag_names}"
+
+        # Update the search_vector using PostgreSQL's to_tsvector function
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE "Questions"
+                SET search_vector = to_tsvector('english', %s)
+                WHERE question_id = %s
+                """,
+                [combined_text, str(self.question_id)]
+            )
 
 
 class Tags(models.Model):
