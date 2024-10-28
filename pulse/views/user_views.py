@@ -61,22 +61,7 @@ def getUserByUsername(request: HttpRequest, username: str) -> JsonResponse:
     """
     user = get_object_or_404(Users, username=username)  # Get the user or return 404
     serializer = UserSerializer(user)  # Serialize the single instance to JSON
-    response_data = serializer.data
-
-    # Get the profile image URL to see if it exists
-    profile_image_url = user.profile_image_url
-    if profile_image_url:
-        source = f"profile-images/{str(user.user.id)}/profile-image"
-        # Fetch image file
-        image_content = supabase.storage.from_('profile-images').download(source)
-
-        # Convert the image content to a base64-encoded string
-        image_base64 = base64.b64encode(image_content).decode('utf-8')
-        response_data['profile_image'] = {
-            "base64String": image_base64,
-            "fileType": "image/jpeg"
-        }
-    return JsonResponse(response_data, status=status.HTTP_200_OK)
+    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 @api_view(["GET"])
 def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
     """
@@ -158,7 +143,7 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
         return JsonResponse({'error': 'Could not ensure bucket exists.'}, status=500)
     
     # Set the upload path in Supabase Storage
-    upload_path = f"profile-images/{user_id}/profile-image"
+    upload_path = f"{user_id}/profile-image"
 
     # Upload the image file to Supabase Storage, replaces current profile pic if it exists
     response = supabase.storage.from_("profile-images").upload(
@@ -169,7 +154,8 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
 
     if response.status_code == 200:
         # Store the image URL in the user's profile
-        user.profile_image_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{upload_path}"
+
+        user.profile_image_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/profile-images/{upload_path}"
         user.save()
         serializer = UserSerializer(user)
         return JsonResponse(serializer.data, status=status.HTTP_200_OK)
