@@ -64,6 +64,7 @@ class Users(models.Model):
     username = models.TextField(unique=True)
     pfp_url = models.TextField(blank=True, null=True)
     reputation = models.BigIntegerField()
+    profile_image_url = models.URLField(null=True, blank=True)  # URL to image in Supabase
 
     class Meta:
         db_table = 'Users'

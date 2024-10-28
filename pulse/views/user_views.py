@@ -1,4 +1,8 @@
-from rest_framework.decorators import api_view
+from django.conf import settings
+from supabase import create_client, Client
+import requests
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from rest_framework import status
@@ -79,4 +83,80 @@ def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
             {"error": "An error occurred", "details": str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )  # Log the error and return a 500 response for unexpected errors
-        
+
+supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+
+def create_bucket_if_not_exists(bucket_name):
+    # Check if the bucket exists
+    buckets = supabase.storage.from_(bucket_name).list()
+
+    # Check if the response is successful and get the list of buckets
+    if isinstance(buckets, list): 
+
+        # Get all bucket names
+        bucket_names = [bucket['name'] for bucket in buckets]
+
+        # Check if the specified bucket already exists
+        if bucket_name in bucket_names:
+            print(f"Bucket '{bucket_name}' already exists.")
+        else:
+            # Create the bucket since it doesn't exist
+            try:
+                response = supabase.storage.create_bucket(bucket_name)
+                if response['error']:
+                    print(f"Error creating bucket: {response['error']}")
+                else:
+                    print(f"Bucket '{bucket_name}' created successfully.")
+                return True
+            except Exception as e:
+                print("Error creating bucket: ", e)
+                return False       
+    else:
+        print(f"Unexpected response format: {buckets}")
+    
+    return True
+
+@api_view(["PUT"])
+@parser_classes([MultiPartParser])  # To handle file uploads
+def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Updates the specified user's profile image
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user to update profile image on
+
+    Returns:
+        JsonResponse: A response containing serialized data for the requested user.
+    """
+    # Get the user or return 404
+    user = get_object_or_404(Users, user_id=user_id)  
+
+    # Get image file from request
+    image_file = request.FILES.get('profile_image')
+    if not image_file:
+        return JsonResponse({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create bucket if it does not exist
+    if not create_bucket_if_not_exists('profile-images'):
+        return JsonResponse({'error': 'Could not ensure bucket exists.'}, status=500)
+    
+    # Upload the image to Supabase Storage
+    headers = {
+        "Content-Type": "application/octet-stream",
+    }
+    upload_path = f"profile-images/{user_id}/{image_file.name}"
+    upload_url = f"{settings.SUPABASE_URL}/storage/v1/object/{upload_path}"
+
+    print("upload_path:",upload_path)
+    print("upload_url:",upload_url)
+    response = requests.put(upload_url, headers=headers, data=image_file)
+
+    if response.status_code == 200:
+        # Store the image URL in the user's profile
+        user.profile_image_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{upload_path}"
+        user.save()
+        serializer = UserSerializer(user)
+        return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return JsonResponse({"error": "Failed to upload image"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
