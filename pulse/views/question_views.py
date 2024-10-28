@@ -42,15 +42,25 @@ def createQuestion(request: HttpRequest) -> JsonResponse:
 @api_view(["GET"])
 def getAllQuestions(request: HttpRequest) -> JsonResponse:
     """
-    Retrieve questions from the database with pagination and optional tag filtering.
+    Retrieve questions from the database with pagination, optional tag filtering, and search functionality.
     """
     # Get query parameters
     page_number = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 20))
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
+    search_query = request.GET.get('search', '').strip()
 
     # Start with all questions, ordered by creation date descending
-    questions = Questions.objects.all().order_by('-created_at')
+    questions = Questions.objects.all()
+
+    # Apply search filter if search_query is provided
+    if search_query:
+        search_vector = SearchQuery(search_query, search_type='websearch')
+        questions = questions.annotate(
+            rank=SearchRank('search_vector', search_vector)
+        ).filter(search_vector=search_vector).order_by('-rank', '-created_at')
+    else:
+        questions = questions.order_by('-created_at')
 
     # Filter questions by tags if any tags are provided
     if selected_tags:
@@ -61,10 +71,8 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
             return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
         num_selected_tags = len(selected_tags)
 
-        # Filter questions that have any of the selected tags
+        # Filter questions that have all of the selected tags
         questions = questions.filter(tags__tag_id__in=selected_tags)
-        
-        # Annotate to count matching tags
         questions = questions.annotate(
             matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
         ).filter(matching_tags=num_selected_tags)
