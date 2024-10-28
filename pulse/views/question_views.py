@@ -39,7 +39,7 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     """
     # Get query parameters
     page_number = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 50))
+    page_size = int(request.GET.get('page_size', 20))
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
 
     # Start with all questions, ordered by creation date descending
