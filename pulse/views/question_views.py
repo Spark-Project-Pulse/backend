@@ -104,13 +104,11 @@ def search_questions(request):
             status=400
         )
 
-    # Create the search query and annotate with rank
-    search_query = SearchQuery(query, search_type="websearch")  # websearch for improved query syntax
+    search_query = SearchQuery(query, search_type="websearch")
     questions = Questions.objects.annotate(
         rank=SearchRank('search_vector', search_query)
-    ).filter(search_vector=search_query).order_by('-rank', '-created_at')[:10]  # Limit to top 10
+    ).filter(search_vector=search_query).order_by('-rank', '-created_at')[:10]
 
-    # Serialize results
     serializer = QuestionSerializer(questions, many=True)
     response = {
         "results": serializer.data
