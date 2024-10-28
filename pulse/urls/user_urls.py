@@ -9,4 +9,5 @@ urlpatterns = [
     path('getByUsername/<str:username>/', user_views.getUserByUsername, name='getUserByUsername'),
     path('userExists/<str:user_id>/', user_views.userExists, name='getUserById'),
     path('updateProfileImageById/<str:user_id>/', user_views.updateProfileImageById, name="updateProfileImage"),
+    path('getProfileImageById/<str:user_id>/', user_views.getProfileImageById, name="getProfileImage"),
 ]

@@ -1,6 +1,6 @@
 from django.conf import settings
 from supabase import create_client, Client
-import requests
+import base64
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
@@ -158,7 +158,40 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
         user.profile_image_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{upload_path}"
         user.save()
         serializer = UserSerializer(user)
-        print(serializer)
         return JsonResponse(serializer.data, status=status.HTTP_200_OK)
     else:
         return JsonResponse({"error": "Failed to upload image"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(["GET"])
+def getProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Gets user's profile image using their id
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user to get profile image
+
+    Returns:
+        JsonResponse: A response with the user's profile image (can be null)
+    """
+    try:
+        # Retrieve user or return 404 if not found
+        user = get_object_or_404(Users, user_id=user_id)
+
+        # Get the profile image URL to see if it exists
+        profile_image_url = user.profile_image_url
+        if not profile_image_url:
+            return JsonResponse({"profile_image": None}, status=status.HTTP_200_OK)
+        
+        source = f"profile-images/{user_id}/profile-image"
+        # Fetch image file
+        response = supabase.storage.from_('profile-images').download(source)
+
+        # Convert the image content to a base64-encoded string
+        image_base64 = base64.b64encode(response).decode('utf-8')
+        return JsonResponse({"profile_image": image_base64}) #add image type here
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An error occurred", "details": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
