@@ -5,7 +5,8 @@ from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
 from django.core.paginator import Paginator, EmptyPage
-
+from django.db.models import Count, Q
+from uuid import UUID
 
 @api_view(["POST"])
 def createQuestion(request: HttpRequest) -> JsonResponse:
@@ -35,46 +36,48 @@ def createQuestion(request: HttpRequest) -> JsonResponse:
 def getAllQuestions(request: HttpRequest) -> JsonResponse:
     """
     Retrieve questions from the database with pagination and optional tag filtering.
-
-    Args:
-        request (HttpRequest): The incoming HTTP request.
-
-    Returns:
-        JsonResponse: A response containing serialized data for the requested page of questions.
     """
     # Get query parameters
-    page_number = int(request.GET.get("page", 1))
-    page_size = int(request.GET.get("page_size", 50))
-    selected_tags = request.GET.getlist(
-        "tags"
-    )  # Expecting multiple 'tags' parameters like ?tags=1&tags=2
+    page_number = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 50))
+    selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
 
     # Start with all questions, ordered by creation date descending
-    questions = Questions.objects.all().order_by("-created_at")
+    questions = Questions.objects.all().order_by('-created_at')
 
     # Filter questions by tags if any tags are provided
     if selected_tags:
-        # Convert tag IDs to appropriate type (e.g., integers)
-        selected_tags = [int(tag_id) for tag_id in selected_tags]
+        # Convert tag IDs to UUID objects
+        try:
+            selected_tags = [UUID(tag_id) for tag_id in selected_tags]
+        except ValueError:
+            return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        num_selected_tags = len(selected_tags)
 
-        # Filter questions that have all of the selected tags
-        for tag_id in selected_tags:
-            questions = questions.filter(tags__contains=[tag_id])
+        # Filter questions that have any of the selected tags
+        questions = questions.filter(tags__tag_id__in=selected_tags)
+        
+        # Annotate to count matching tags
+        questions = questions.annotate(
+            matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
+        ).filter(matching_tags=num_selected_tags)
+
+    # Remove duplicates
+    questions = questions.distinct()
 
     # Pagination
     paginator = Paginator(questions, page_size)
     try:
         page_obj = paginator.page(page_number)
     except EmptyPage:
-        # If page is out of range, return empty list
         page_obj = []
 
     serializer = QuestionSerializer(page_obj.object_list, many=True)
     response_data = {
-        "questions": serializer.data,
-        "totalQuestions": paginator.count,
-        "totalPages": paginator.num_pages,
-        "currentPage": page_number,
+        'questions': serializer.data,
+        'totalQuestions': paginator.count,
+        'totalPages': paginator.num_pages,
+        'currentPage': page_number,
     }
     return JsonResponse(response_data, status=status.HTTP_200_OK)
 
