@@ -17,5 +17,5 @@ urlpatterns = [
     path('questions/', include(question_urls)),
     path('users/', include(user_urls)),
     path('tags/', include (tag_urls)),
-    path('comments/', include(comment_urls))
+    path('comments/', include(comment_urls)),
 ]
