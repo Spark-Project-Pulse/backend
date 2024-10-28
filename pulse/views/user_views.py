@@ -88,13 +88,13 @@ supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_K
 
 def create_bucket_if_not_exists(bucket_name):
     # Check if the bucket exists
-    buckets = supabase.storage.from_(bucket_name).list()
+    buckets = supabase.storage.list_buckets()
 
     # Check if the response is successful and get the list of buckets
     if isinstance(buckets, list): 
 
         # Get all bucket names
-        bucket_names = [bucket['name'] for bucket in buckets]
+        bucket_names = [bucket.name for bucket in buckets]
 
         # Check if the specified bucket already exists
         if bucket_name in bucket_names:
@@ -103,8 +103,9 @@ def create_bucket_if_not_exists(bucket_name):
             # Create the bucket since it doesn't exist
             try:
                 response = supabase.storage.create_bucket(bucket_name)
-                if response['error']:
+                if 'error' in response:
                     print(f"Error creating bucket: {response['error']}")
+                    return False
                 else:
                     print(f"Bucket '{bucket_name}' created successfully.")
                 return True
@@ -136,27 +137,28 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
     image_file = request.FILES.get('profile_image')
     if not image_file:
         return JsonResponse({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+    image_content = image_file.read()
 
     # Create bucket if it does not exist
     if not create_bucket_if_not_exists('profile-images'):
         return JsonResponse({'error': 'Could not ensure bucket exists.'}, status=500)
     
-    # Upload the image to Supabase Storage
-    headers = {
-        "Content-Type": "application/octet-stream",
-    }
-    upload_path = f"profile-images/{user_id}/{image_file.name}"
-    upload_url = f"{settings.SUPABASE_URL}/storage/v1/object/{upload_path}"
+    # Set the upload path in Supabase Storage
+    upload_path = f"profile-images/{user_id}/profile-image"
 
-    print("upload_path:",upload_path)
-    print("upload_url:",upload_url)
-    response = requests.put(upload_url, headers=headers, data=image_file)
+    # Upload the image file to Supabase Storage, replaces current profile pic if it exists
+    response = supabase.storage.from_("profile-images").upload(
+        file=image_content, 
+        path=upload_path, 
+        file_options={"content-type": image_file.content_type, "upsert": "true"},
+        )
 
     if response.status_code == 200:
         # Store the image URL in the user's profile
         user.profile_image_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{upload_path}"
         user.save()
         serializer = UserSerializer(user)
+        print(serializer)
         return JsonResponse(serializer.data, status=status.HTTP_200_OK)
     else:
         return JsonResponse({"error": "Failed to upload image"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
