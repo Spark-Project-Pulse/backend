@@ -147,10 +147,40 @@ class Communities(models.Model):
     avatar_url = models.TextField(blank=True, null=True)
     tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    search_vector = SearchVectorField(null=True, blank=True)
 
     # Add search functionality once that is complete
     class Meta:
-        db_table = 'Communities'    
+        db_table = 'Communities'
+        indexes = [
+            GinIndex(fields=['search_vector']),  # GIN index
+        ]  
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_search_vector()
+
+    def update_search_vector(self):
+        """
+        Update the search_vector field based on title, description, and tags.
+        """
+        # Aggregate tag names into a single string
+        tag_names = " ".join(self.tags.values_list('name', flat=True))
+        
+        # Combine title, description, and tag names
+        combined_text = f"{self.title} {self.description} {tag_names}"
+
+        # Update the search_vector using PostgreSQL's to_tsvector function
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE "Communities"
+                SET search_vector = to_tsvector('english', %s)
+                WHERE community_id = %s
+                """,
+                [combined_text, str(self.community_id)]
+            )
         
 class CommunityMembers(models.Model):
     community = models.ForeignKey('Communities', on_delete=models.CASCADE)  # delete user from community if community is deleted

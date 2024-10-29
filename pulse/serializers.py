@@ -65,6 +65,8 @@ class VoteSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class CommunitySerializer(serializers.ModelSerializer):
+    rank = serializers.FloatField(read_only=True)
+    
     class Meta:
         model = Communities
         fields = '__all__'   

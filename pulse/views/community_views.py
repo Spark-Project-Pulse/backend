@@ -5,7 +5,10 @@ from django.http import JsonResponse
 from rest_framework import status
 from ..models import Communities
 from ..serializers import CommunitySerializer
-from rest_framework.decorators import throttle_classes
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.core.paginator import Paginator, EmptyPage
+from django.db.models import Count, Q
+from uuid import UUID
 
 @api_view(["POST"])
 def createCommunity(request: HttpRequest) -> JsonResponse:
@@ -36,59 +39,57 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
     Retrieve communities from the database with pagination, optional tag filtering, and search functionality.
     """
     # Get query parameters
-    # page_number = int(request.GET.get('page', 1))
-    # page_size = int(request.GET.get('page_size', 20))
-    # selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
-    # search_query = request.GET.get('search', '').strip()
+    page_number = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 20))
+    selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
+    search_query = request.GET.get('search', '').strip()
 
     # Start with all communities, ordered by creation date descending
     communities = Communities.objects.all()
 
     # Apply search filter if search_query is provided
-    # if search_query:
-    #     search_vector = SearchQuery(search_query, search_type='websearch')
-    #     communities = communities.annotate(
-    #         rank=SearchRank('search_vector', search_vector)
-    #     ).filter(search_vector=search_vector).order_by('-rank', '-created_at')
-    # else:
-    #     communities = communities.order_by('-created_at')
+    if search_query:
+        search_vector = SearchQuery(search_query, search_type='websearch')
+        communities = communities.annotate(
+            rank=SearchRank('search_vector', search_vector)
+        ).filter(search_vector=search_vector).order_by('-rank', '-created_at')
+    else:
+        communities = communities.order_by('-created_at')
 
     # Filter communities by tags if any tags are provided
-    # if selected_tags:
-    #     # Convert tag IDs to UUID objects
-    #     try:
-    #         selected_tags = [UUID(tag_id) for tag_id in selected_tags]
-    #     except ValueError:
-    #         return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
-    #     num_selected_tags = len(selected_tags)
+    if selected_tags:
+        # Convert tag IDs to UUID objects
+        try:
+            selected_tags = [UUID(tag_id) for tag_id in selected_tags]
+        except ValueError:
+            return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        num_selected_tags = len(selected_tags)
 
-    #     # Filter communities that have all of the selected tags
-    #     communities = communities.filter(tags__tag_id__in=selected_tags)
-    #     communities = communities.annotate(
-    #         matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
-    #     ).filter(matching_tags=num_selected_tags)
+        # Filter communities that have all of the selected tags
+        communities = communities.filter(tags__tag_id__in=selected_tags)
+        communities = communities.annotate(
+            matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
+        ).filter(matching_tags=num_selected_tags)
 
     # Remove duplicates
     communities = communities.distinct()
 
     # Pagination
-    # paginator = Paginator(communities, page_size)
-    # try:
-    #     page_obj = paginator.page(page_number)
-    # except EmptyPage:
-    #     page_obj = []
+    paginator = Paginator(communities, page_size)
+    try:
+        page_obj = paginator.page(page_number)
+    except EmptyPage:
+        page_obj = []
 
-    # serializer = CommunitySerializer(page_obj.object_list, many=True)
-    serializer = CommunitySerializer(communities, many=True)
+    serializer = CommunitySerializer(page_obj.object_list, many=True)
     
-    # response_data = {
-    #     'communities': serializer.data,
-    #     'totalCommunities': paginator.count,
-    #     'totalPages': paginator.num_pages,
-    #     'currentPage': page_number,
-    # }
-    # return JsonResponse(response_data, status=status.HTTP_200_OK)
-    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+    response_data = {
+        'communities': serializer.data,
+        'totalCommunities': paginator.count,
+        'totalPages': paginator.num_pages,
+        'currentPage': page_number,
+    }
+    return JsonResponse(response_data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getCommunityById(request: HttpRequest, community_id: str) -> JsonResponse:
