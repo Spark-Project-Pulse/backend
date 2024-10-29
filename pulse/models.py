@@ -141,7 +141,7 @@ class Comments(models.Model):
 
 class Communities(models.Model):
     community_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.TextField()
+    title = models.TextField(unique=True)
     description = models.TextField()
     member_count = models.BigIntegerField(default=0)
     avatar_url = models.TextField(blank=True, null=True)
