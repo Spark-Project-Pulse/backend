@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.http import JsonResponse
 from rest_framework import status
-from ..models import Communities
+from ..models import Communities, CommunityMembers, Users
 from ..serializers import CommunitySerializer
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage
@@ -32,6 +32,58 @@ def createCommunity(request: HttpRequest) -> JsonResponse:
             {"community_id": community.community_id}, status=status.HTTP_201_CREATED
         )
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["POST"])
+def addCommunityMember(request: HttpRequest) -> JsonResponse:
+    """
+    Add a member, increasing its member count by 1
+    and add them to the CommunityMembers table.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
+
+    Returns:
+        JsonResponse: Success message or error message.
+    """
+    community_id = request.data.get('community_id')
+    user_id = request.data.get('user_id')
+
+    community = get_object_or_404(Communities, pk=community_id)
+    user = get_object_or_404(Users, pk=user_id)
+
+    # Added the user to the community
+    CommunityMembers.objects.create(community=community, user=user)
+    community.member_count += 1  # Increment member count by 1
+    community.save()
+
+    return JsonResponse({"message": "Join successful"}, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+def removeCommunityMember(request: HttpRequest) -> JsonResponse:
+    """
+    Remove a member, decreasing its member count by 1
+    and remove them from the CommunityMembers table.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
+
+    Returns:
+        JsonResponse: Success message or error message.
+    """
+    community_id = request.data.get('community_id')
+    user_id = request.data.get('user_id')
+
+    community = get_object_or_404(Communities, pk=community_id)
+    user = get_object_or_404(Users, pk=user_id)
+    
+    existing_member = CommunityMembers.objects.filter(community=community, user=user).first()
+
+    # Remove the user from the community
+    existing_member.delete()
+    community.member_count -= 1  # Decrement member count by 1
+    community.save()
+
+    return JsonResponse({"message": "Remove successful"}, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getAllCommunities(request: HttpRequest) -> JsonResponse:
@@ -109,3 +161,18 @@ def getCommunityById(request: HttpRequest, community_id: str) -> JsonResponse:
     serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(["GET"])
+def getCommunityByTitle(request: HttpRequest, title: str) -> JsonResponse:
+    """
+    Retrieve a single community by its title and serialize it to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        title (str): The title of the community to retrieve.
+
+    Returns:
+        JsonResponse: A response containing serialized data for the requested community.
+    """
+    community = get_object_or_404(Communities, title=title)  # Get the community or return 404
+    serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
+    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
