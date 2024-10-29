@@ -138,3 +138,26 @@ class Comments(models.Model):
 
     class Meta:
         db_table = 'Comments'
+
+class Communities(models.Model):
+    community_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.TextField()
+    description = models.TextField()
+    member_count = models.BigIntegerField(default=0)
+    avatar_url = models.TextField(blank=True, null=True)
+    tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Add search functionality once that is complete
+    class Meta:
+        db_table = 'Communities'    
+        
+class CommunityMembers(models.Model):
+    community = models.ForeignKey('Communities', on_delete=models.CASCADE)  # delete user from community if community is deleted
+    user = models.ForeignKey('Users', on_delete=models.CASCADE)  # delete user from community if user is removed
+
+    class Meta:
+        db_table = 'CommunityMembers'
+        constraints = [
+            models.UniqueConstraint(fields=['community', 'user'], name='unique_community_user')
+        ]
