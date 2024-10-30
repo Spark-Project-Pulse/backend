@@ -20,5 +20,4 @@ urlpatterns = [
     path('tags/', include (tag_urls)),
     path('comments/', include(comment_urls)),
     path('communities/', include(community_urls)),
-    path('communities/', include(community_urls)),
 ]
