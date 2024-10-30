@@ -176,3 +176,26 @@ def getCommunityByTitle(request: HttpRequest, title: str) -> JsonResponse:
     community = get_object_or_404(Communities, title=title)  # Get the community or return 404
     serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def userIsPartOfCommunity(request: HttpRequest, title: str, user_id: str) -> JsonResponse:
+    """
+    Check if a user is part of a community by community title and user ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        title (str): The title of the community.
+        user_id (str): The ID of the user.
+
+    Returns:
+        JsonResponse: A response indicating whether the user is part of the community.
+    """
+    # Validate community and user
+    community = get_object_or_404(Communities, title=title)
+    user = get_object_or_404(Users, pk=user_id)
+
+    # Check if the user is part of the community
+    is_member = CommunityMembers.objects.filter(community=community, user=user).exists()
+
+    return JsonResponse({"is_member": is_member}, status=status.HTTP_200_OK)
+
