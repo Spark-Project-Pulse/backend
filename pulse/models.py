@@ -144,7 +144,7 @@ class Communities(models.Model):
     title = models.TextField(unique=True)
     description = models.TextField()
     member_count = models.BigIntegerField(default=0)
-    avatar_url = models.TextField(blank=True, null=True)
+    avatar_url = models.URLField(blank=True, null=True)
     tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
