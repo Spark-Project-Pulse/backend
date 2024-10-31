@@ -104,9 +104,9 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
         search_vector = SearchQuery(search_query, search_type='websearch')
         communities = communities.annotate(
             rank=SearchRank('search_vector', search_vector)
-        ).filter(search_vector=search_vector).order_by('-rank', '-created_at')
+        ).filter(search_vector=search_vector).order_by('-rank', '-member_count')
     else:
-        communities = communities.order_by('-created_at')
+        communities = communities.order_by('-member_count')
 
     # Filter communities by tags if any tags are provided
     if selected_tags:
