@@ -13,5 +13,6 @@ urlpatterns = [
     path('getAll/', community_views.getAllCommunities, name='getAllCommunities'),
     path('getById/<str:community_id>/', community_views.getCommunityById, name='getCommunityById'),
     path('getByTitle/<str:title>/', community_views.getCommunityByTitle, name='getCommunityByTitle'),
+    path('getUserCommunitiesById/<str:user_id>/', community_views.getUserCommunitiesById, name='getUserCommunitiesById'),
     path('userIsPartOfCommunity/<str:title>/<str:user_id>/', community_views.userIsPartOfCommunity, name='userIsPartOfCommunity'),
 ]

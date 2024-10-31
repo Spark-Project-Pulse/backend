@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Answers, Questions, Projects, Users, Comments, Tags, Votes, Communities
+from .models import Answers, Questions, Projects, Users, Comments, Tags, Votes, Communities, CommunityMembers
 
 # NOTE: Each model should have a corresponding serializer to handle validation and
 # conversion of incoming data, as well as serializing outgoing data to be
@@ -69,4 +69,12 @@ class CommunitySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Communities
+        fields = '__all__'
+        
+class CommunityMemberSerializer(serializers.ModelSerializer):
+    # This allows us to get the community info as a dictionary, based on the community_id (for GET requests)
+    community_info = CommunitySerializer(source='community', read_only=True)
+    
+    class Meta:
+        model = CommunityMembers
         fields = '__all__'   

@@ -1,10 +1,10 @@
 from rest_framework.decorators import api_view
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.http import JsonResponse, HttpRequest
 from django.http import JsonResponse
 from rest_framework import status
 from ..models import Communities, CommunityMembers, Users
-from ..serializers import CommunitySerializer
+from ..serializers import CommunitySerializer, CommunityMemberSerializer
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Q
@@ -176,6 +176,22 @@ def getCommunityByTitle(request: HttpRequest, title: str) -> JsonResponse:
     community = get_object_or_404(Communities, title=title)  # Get the community or return 404
     serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def getUserCommunitiesById(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Retrieve all communities associated with a user's ID and return them in JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user whose communities are to be retrieved.
+
+    Returns:
+        JsonResponse: A response containing serialized data for the user's communities.
+    """
+    communities = get_list_or_404(CommunityMembers, user=user_id)
+    serializer = CommunityMemberSerializer(communities, many=True)  # Serialize multiple instances
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def userIsPartOfCommunity(request: HttpRequest, title: str, user_id: str) -> JsonResponse:
