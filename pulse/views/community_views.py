@@ -144,6 +144,22 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
     return JsonResponse(response_data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
+def getAllCommunityOptions(request: HttpRequest) -> JsonResponse:
+    """
+    Retrieve all communties from the database and serialize them
+    to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+
+    Returns:
+        Json
+    """
+    communities = Communities.objects.all()
+    serializer = CommunitySerializer(communities, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+@api_view(["GET"])
 def getCommunityById(request: HttpRequest, community_id: str) -> JsonResponse:
     """
     Retrieve a single community by its ID and serialize it to JSON format.

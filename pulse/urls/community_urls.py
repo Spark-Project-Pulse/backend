@@ -11,6 +11,7 @@ urlpatterns = [
     
     # GET Requests
     path('getAll/', community_views.getAllCommunities, name='getAllCommunities'),
+    path('getAllOptions/', community_views.getAllCommunityOptions, name='getAllCommunityOptions'),
     path('getById/<str:community_id>/', community_views.getCommunityById, name='getCommunityById'),
     path('getByTitle/<str:title>/', community_views.getCommunityByTitle, name='getCommunityByTitle'),
     path('getUserCommunitiesById/<str:user_id>/', community_views.getUserCommunitiesById, name='getUserCommunitiesById'),
