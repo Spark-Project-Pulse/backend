@@ -16,6 +16,7 @@ from django.db.models import Count, Q, F
 from django.db.models.functions import Greatest
 from django.contrib.postgres.aggregates import StringAgg
 from uuid import UUID
+import logging
 
 @api_view(["POST"])
 def createQuestion(request: HttpRequest) -> JsonResponse:
@@ -139,6 +140,8 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
+logger = logging.getLogger(__name__)
+
 class BurstUserRateThrottle(UserRateThrottle):
     rate = '10/min'
 
@@ -150,18 +153,24 @@ class BurstAnonRateThrottle(AnonRateThrottle):
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
 def search_questions(request):
     query = request.GET.get('q', '').strip()
-    tags = request.GET.getlist('tags')
+    tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
+
+    logger.debug(f"Received search query: '{query}' with tags: {tags}")
 
     if not query and not tags:
+        logger.debug("No search query or tags provided.")
         return JsonResponse(
             {"error": "No search query or tags provided."},
-            status=400
+            status=status.HTTP_400_BAD_REQUEST
         )
 
     questions = Questions.objects.all()
 
+    combined_filters = Q()
+
+    # Handle search query
     if query:
-        # Define the search vector with weights and unaccent
+        # Define the search vector with weights
         search_vector = (
             SearchVector('title', weight='A') +
             SearchVector('description', weight='B') +
@@ -169,29 +178,16 @@ def search_questions(request):
         )
         search_query = SearchQuery(query, search_type="websearch")
         
-        # Annotate with full-text search rank
+        # Annotate with full-text search rank and trigram similarities
         questions = questions.annotate(
-            rank=SearchRank(search_vector, search_query)
-        )
-
-        # Annotate with trigram similarity for title and description
-        questions = questions.annotate(
+            rank=SearchRank(search_vector, search_query),
             similarity_title=TrigramSimilarity('title', query),
             similarity_description=TrigramSimilarity('description', query),
-        )
-
-        # Annotate with aggregated tag names
-        questions = questions.annotate(
+        ).annotate(
             tag_names=StringAgg('tags__name', delimiter=' ', distinct=True)
-        )
-
-        # Annotate with trigram similarity for tags
-        questions = questions.annotate(
+        ).annotate(
             similarity_tags=TrigramSimilarity('tag_names', query)
-        )
-
-        # Combine all similarity scores using Greatest
-        questions = questions.annotate(
+        ).annotate(
             total_similarity=Greatest(
                 F('similarity_title'),
                 F('similarity_description'),
@@ -199,16 +195,35 @@ def search_questions(request):
             )
         )
 
-        # Filter based on either full-text search or similarity thresholds
-        questions = questions.filter(
-            Q(search_vector=search_query) | Q(total_similarity__gt=0.05)  # Adjust threshold as needed
-        ).order_by('-rank', '-total_similarity', '-created_at')
+        # Combine search filters using OR logic
+        search_filter = Q(search_vector=search_query) | Q(total_similarity__gt=0.05)
+        combined_filters |= search_filter
 
+    # handles tag filters
     if tags:
-        questions = questions.filter(tags__name__in=tags).distinct()
+        try:
+            # convert tag IDs to UUID objects
+            tag_uuids = [UUID(tag_id) for tag_id in tags]
+            logger.debug(f"Converted tag IDs to UUIDs: {tag_uuids}")
+        except ValueError:
+            logger.error("Invalid tag IDs provided.")
+            return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        tag_filters = Q()
+        for tag_uuid in tag_uuids:
+            tag_filters &= Q(tags__tag_id=tag_uuid)
+        
+        combined_filters |= tag_filters
+
+    logger.debug(f"Combined Filters: {combined_filters}")
+
+    # Apply the combined OR filters
+    questions = questions.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
+
+    logger.debug(f"Number of questions after filtering: {questions.count()}")
 
     # Limit results to 10 for now
     questions = questions[:10]
 
     serializer = QuestionSerializer(questions, many=True)
-    return JsonResponse({"results": serializer.data}, status=200)
+    return JsonResponse({"results": serializer.data}, status=status.HTTP_200_OK)
