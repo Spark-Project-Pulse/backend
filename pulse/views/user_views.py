@@ -1,6 +1,5 @@
 from django.conf import settings
 from supabase import create_client, Client
-import base64
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
