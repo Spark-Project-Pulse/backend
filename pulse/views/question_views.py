@@ -5,14 +5,16 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
 from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.decorators import throttle_classes
 from django.core.paginator import Paginator, EmptyPage
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
+from django.db.models.functions import Greatest
+from django.contrib.postgres.aggregates import StringAgg
 from uuid import UUID
 
 @api_view(["POST"])
@@ -147,7 +149,7 @@ class BurstAnonRateThrottle(AnonRateThrottle):
 @csrf_exempt 
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
 def search_questions(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '').strip()
     tags = request.GET.getlist('tags')
 
     if not query and not tags:
@@ -156,19 +158,56 @@ def search_questions(request):
             status=400
         )
 
-    search_query = SearchQuery(query, search_type="websearch") if query else None
     questions = Questions.objects.all()
 
-    # Apply full-text search filter if there's a search query
-    if search_query:
+    if query:
+        # Define the search vector with weights and unaccent
+        search_vector = (
+            SearchVector('title', weight='A') +
+            SearchVector('description', weight='B') +
+            SearchVector('tags__name', weight='C')
+        )
+        search_query = SearchQuery(query, search_type="websearch")
+        
+        # Annotate with full-text search rank
         questions = questions.annotate(
-            rank=SearchRank('search_vector', search_query)
-        ).filter(search_vector=search_query).order_by('-rank', '-created_at')
+            rank=SearchRank(search_vector, search_query)
+        )
+
+        # Annotate with trigram similarity for title and description
+        questions = questions.annotate(
+            similarity_title=TrigramSimilarity('title', query),
+            similarity_description=TrigramSimilarity('description', query),
+        )
+
+        # Annotate with aggregated tag names
+        questions = questions.annotate(
+            tag_names=StringAgg('tags__name', delimiter=' ', distinct=True)
+        )
+
+        # Annotate with trigram similarity for tags
+        questions = questions.annotate(
+            similarity_tags=TrigramSimilarity('tag_names', query)
+        )
+
+        # Combine all similarity scores using Greatest
+        questions = questions.annotate(
+            total_similarity=Greatest(
+                F('similarity_title'),
+                F('similarity_description'),
+                F('similarity_tags')
+            )
+        )
+
+        # Filter based on either full-text search or similarity thresholds
+        questions = questions.filter(
+            Q(search_vector=search_query) | Q(total_similarity__gt=0.05)  # Adjust threshold as needed
+        ).order_by('-rank', '-total_similarity', '-created_at')
 
     if tags:
         questions = questions.filter(tags__name__in=tags).distinct()
 
-    #Temporary: until pagination is implemented
+    # Limit results to 10 for now
     questions = questions[:10]
 
     serializer = QuestionSerializer(questions, many=True)
