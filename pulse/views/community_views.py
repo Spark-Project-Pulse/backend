@@ -160,6 +160,29 @@ def getAllCommunityOptions(request: HttpRequest) -> JsonResponse:
     return JsonResponse(serializer.data, safe=False)
 
 @api_view(["GET"])
+def getAllCommunityMembers(request: HttpRequest, community_id: str) -> JsonResponse:
+    """
+    Get all community members by community ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        community_id (str): The ID of the community.
+
+    Returns:
+        JsonResponse: A response indicating whether the user is part of the community.
+    """
+    # Validate community
+    community = get_object_or_404(Communities, community_id=community_id)
+
+    # Get the users that are part of the community
+    members = CommunityMembers.objects.filter(community=community)
+    
+    # Serialize the list of members, setting many=True to indicate multiple objects
+    serializer = CommunityMemberSerializer(members, many=True)
+
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
 def getCommunityById(request: HttpRequest, community_id: str) -> JsonResponse:
     """
     Retrieve a single community by its ID and serialize it to JSON format.

@@ -74,6 +74,8 @@ class CommunitySerializer(serializers.ModelSerializer):
 class CommunityMemberSerializer(serializers.ModelSerializer):
     # This allows us to get the community info as a dictionary, based on the community_id (for GET requests)
     community_info = CommunitySerializer(source='community', read_only=True)
+    # This allows us to get the user info as a dictionary, based on the user_id (for GET requests)
+    user_info = UserSerializer(source='user', read_only=True)
     
     class Meta:
         model = CommunityMembers
