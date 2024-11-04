@@ -238,6 +238,12 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    ``` bash
    python manage.py migrate
    ```
+4. Run the following SQL commands in your SQL Editor on your local Supabase DB
+
+   ``` bash
+   CREATE EXTENSION IF NOT EXISTS pg_trgm;
+   CREATE EXTENSION IF NOT EXISTS unaccent;
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
