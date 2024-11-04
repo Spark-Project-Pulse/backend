@@ -140,7 +140,7 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 class BurstUserRateThrottle(UserRateThrottle):
     rate = '10/min'
@@ -156,10 +156,10 @@ def search_questions(request):
     query = request.GET.get('q', '').strip()
     tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
 
-    logger.debug(f"Received search query: '{query}' with tags: {tags}")
+    # logger.debug(f"Received search query: '{query}' with tags: {tags}")
 
     if not query and not tags:
-        logger.debug("No search query or tags provided.")
+        # logger.debug("No search query or tags provided.")
         return JsonResponse(
             {"error": "No search query or tags provided."},
             status=status.HTTP_400_BAD_REQUEST
@@ -207,9 +207,9 @@ def search_questions(request):
         try:
             # Convert tag IDs to UUID objects
             tag_uuids = [UUID(tag_id) for tag_id in tags]
-            logger.debug(f"Converted tag IDs to UUIDs: {tag_uuids}")
+            # logger.debug(f"Converted tag IDs to UUIDs: {tag_uuids}")
         except ValueError:
-            logger.error("Invalid tag IDs provided.")
+            # logger.error("Invalid tag IDs provided.")
             return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         tag_filters = Q()
@@ -218,12 +218,12 @@ def search_questions(request):
         
         combined_filters &= tag_filters
 
-    logger.debug(f"Combined Filters: {combined_filters}")
+    # logger.debug(f"Combined Filters: {combined_filters}")
 
     # Apply the combined AND filters
     questions = questions.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
 
-    logger.debug(f"Number of questions after filtering: {questions.count()}")
+    # logger.debug(f"Number of questions after filtering: {questions.count()}")
 
     questions = questions[:10]
 
