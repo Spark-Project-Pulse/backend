@@ -175,7 +175,7 @@ def getAllCommunityMembers(request: HttpRequest, community_id: str) -> JsonRespo
     community = get_object_or_404(Communities, community_id=community_id)
 
     # Get the users that are part of the community
-    members = CommunityMembers.objects.filter(community=community)
+    members = CommunityMembers.objects.filter(community=community).order_by('-community_reputation')
     
     # Serialize the list of members, setting many=True to indicate multiple objects
     serializer = CommunityMemberSerializer(members, many=True)

@@ -187,6 +187,7 @@ class CommunityMembers(models.Model):
     community = models.ForeignKey('Communities', on_delete=models.CASCADE)  # delete user from community if community is deleted
     user = models.ForeignKey('Users', on_delete=models.CASCADE)  # delete user from community if user is removed
     community_reputation = models.BigIntegerField(default=0)
+    contributions = models.BigIntegerField(default=0)
 
     class Meta:
         db_table = 'CommunityMembers'

@@ -10,14 +10,33 @@ from ..serializers import AnswerSerializer
 
 @api_view(["POST"])
 def createAnswer(request: HttpRequest) -> JsonResponse:
-    """Create an answer
-
+    """
+    Create an answer and increment contributions if the user is a member of the related community.
+    
     Returns:
         JsonResponse:
     """
-    serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF (djang-rest-framework) compatibility
+    serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF compatibility
     if serializer.is_valid():
         answer = serializer.save()  # Save the new answer
+
+        # Check if the question has a related community
+        question = answer.question
+        if question.related_community and answer.expert:
+            community = question.related_community
+            user = answer.expert
+
+            # Check if the user is a member of the community
+            try:
+                community_member = CommunityMembers.objects.get(community=community, user=user)
+                
+                # Increment contributions if the user is a member
+                community_member.contributions += 1
+                community_member.save()
+            except CommunityMembers.DoesNotExist:
+                # If the user is not a member, do nothing
+                pass
+
         serialized_answer = AnswerSerializer(answer)  # Serialize the saved answer
         return JsonResponse(serialized_answer.data, status=status.HTTP_201_CREATED)  # Return the serialized data
 
