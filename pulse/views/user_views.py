@@ -1,10 +1,10 @@
 from django.conf import settings
-from supabase import create_client, Client
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from rest_framework import status
+from ..supabase_utils import get_supabase_client
 from ..models import Users
 from ..serializers import UserSerializer
 
@@ -82,39 +82,6 @@ def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )  # Log the error and return a 500 response for unexpected errors
 
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
-
-def create_bucket_if_not_exists(bucket_name):
-    # Check if the bucket exists
-    buckets = supabase.storage.list_buckets()
-
-    # Check if the response is successful and get the list of buckets
-    if isinstance(buckets, list): 
-
-        # Get all bucket names
-        bucket_names = [bucket.name for bucket in buckets]
-
-        # Check if the specified bucket already exists
-        if bucket_name in bucket_names:
-            print(f"Bucket '{bucket_name}' already exists.")
-        else:
-            # Create the bucket since it doesn't exist
-            try:
-                response = supabase.storage.create_bucket(bucket_name)
-                if 'error' in response:
-                    print(f"Error creating bucket: {response['error']}")
-                    return False
-                else:
-                    print(f"Bucket '{bucket_name}' created successfully.")
-                return True
-            except Exception as e:
-                print("Error creating bucket: ", e)
-                return False       
-    else:
-        print(f"Unexpected response format: {buckets}")
-    
-    return True
-
 @api_view(["PUT"])
 @parser_classes([MultiPartParser])  # To handle file uploads
 def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
@@ -128,6 +95,10 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
     Returns:
         JsonResponse: A response containing serialized data for the requested user.
     """
+
+    # Get supabase client
+    supabase = get_supabase_client()
+
     # Get the user or return 404
     user = get_object_or_404(Users, user_id=user_id)  
 
@@ -136,6 +107,38 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
     if not image_file:
         return JsonResponse({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
     image_content = image_file.read()
+
+    # Checks if bucket exists, if not then creates it
+    def create_bucket_if_not_exists(bucket_name):
+        # Check if the bucket exists
+        buckets = supabase.storage.list_buckets()
+
+        # Check if the response is successful and get the list of buckets
+        if isinstance(buckets, list): 
+
+            # Get all bucket names
+            bucket_names = [bucket.name for bucket in buckets]
+
+            # Check if the specified bucket already exists
+            if bucket_name in bucket_names:
+                print(f"Bucket '{bucket_name}' already exists.")
+            else:
+                # Create the bucket since it doesn't exist
+                try:
+                    response = supabase.storage.create_bucket(bucket_name)
+                    if 'error' in response:
+                        print(f"Error creating bucket: {response['error']}")
+                        return False
+                    else:
+                        print(f"Bucket '{bucket_name}' created successfully.")
+                    return True
+                except Exception as e:
+                    print("Error creating bucket: ", e)
+                    return False       
+        else:
+            print(f"Unexpected response format: {buckets}")
+        
+        return True
 
     # Create bucket if it does not exist
     if not create_bucket_if_not_exists('profile-images'):
