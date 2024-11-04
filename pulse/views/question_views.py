@@ -49,9 +49,17 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     page_size = int(request.GET.get('page_size', 20))
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
     search_query = request.GET.get('search', '').strip()
+    related_community_id = request.GET.get('related_community_id', None)  # Optional community filter
 
     # Start with all questions, ordered by creation date descending
     questions = Questions.objects.all()
+    
+    # Filter by community if related_community_id is provided
+    if related_community_id:
+        try:
+            questions = questions.filter(related_community__community_id=related_community_id)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid community ID provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Apply search filter if search_query is provided
     if search_query:
