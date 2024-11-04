@@ -245,6 +245,19 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    CREATE EXTENSION IF NOT EXISTS unaccent;
    ```
 
+   ``` bash
+   CREATE POLICY "Allow all on profile-images" 
+   ON storage.objects
+   FOR ALL
+   USING (bucket_id = 'profile-images');
+   CREATE POLICY "Public all access to buckets"
+   ON storage.buckets
+   FOR ALL
+   USING (true);
+   ```
+
+5. After doing this, make sure to create a bucket under storage called "profile-images" and make sure to select "public"
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
