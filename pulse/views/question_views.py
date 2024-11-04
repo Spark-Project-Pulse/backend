@@ -148,6 +148,7 @@ class BurstUserRateThrottle(UserRateThrottle):
 class BurstAnonRateThrottle(AnonRateThrottle):
     rate = '5/min'
 
+
 @require_GET
 @csrf_exempt 
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
@@ -166,6 +167,7 @@ def search_questions(request):
 
     questions = Questions.objects.all()
 
+    # Initialize combined_filters as Q() for AND logic
     combined_filters = Q()
 
     # Handle search query
@@ -195,14 +197,15 @@ def search_questions(request):
             )
         )
 
-        # Combine search filters using OR logic
-        search_filter = Q(search_vector=search_query) | Q(total_similarity__gt=0.05)
-        combined_filters |= search_filter
+        # Combine search filters using OR logic within search criteria
+        search_filter = Q(search_vector=search_query) | Q(total_similarity__gt=0.05) 
 
-    # handles tag filters
+        combined_filters &= search_filter
+
+    # Handle tag filters
     if tags:
         try:
-            # convert tag IDs to UUID objects
+            # Convert tag IDs to UUID objects
             tag_uuids = [UUID(tag_id) for tag_id in tags]
             logger.debug(f"Converted tag IDs to UUIDs: {tag_uuids}")
         except ValueError:
@@ -213,16 +216,15 @@ def search_questions(request):
         for tag_uuid in tag_uuids:
             tag_filters &= Q(tags__tag_id=tag_uuid)
         
-        combined_filters |= tag_filters
+        combined_filters &= tag_filters
 
     logger.debug(f"Combined Filters: {combined_filters}")
 
-    # Apply the combined OR filters
+    # Apply the combined AND filters
     questions = questions.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
 
     logger.debug(f"Number of questions after filtering: {questions.count()}")
 
-    # Limit results to 10 for now
     questions = questions[:10]
 
     serializer = QuestionSerializer(questions, many=True)
