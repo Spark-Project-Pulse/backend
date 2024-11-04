@@ -29,7 +29,7 @@ def createCommunity(request: HttpRequest) -> JsonResponse:
     if serializer.is_valid():
         community = serializer.save()  # Save the valid data as a new Community instance
         return JsonResponse(
-            {"community_id": community.community_id}, status=status.HTTP_201_CREATED
+            {"community_id": community.community_id, "title": community.title}, status=status.HTTP_201_CREATED
         )
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

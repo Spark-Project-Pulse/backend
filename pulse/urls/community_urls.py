@@ -5,7 +5,7 @@ from ..views import community_views
 # URL routes for calls relating to communities
 urlpatterns = [
     # POST Requests
-    path('create/', community_views.createCommunity, name='createComment'),
+    path('create/', community_views.createCommunity, name='createCommunity'),
     path('addCommunityMember/', community_views.addCommunityMember, name='addCommunityMember'),
     path('removeCommunityMember/', community_views.removeCommunityMember, name='removeCommunityMember'),
     
