@@ -40,6 +40,49 @@ class Votes(models.Model):
     class Meta:
         db_table = 'Votes'
         unique_together = ('user', 'answer')
+        
+class Communities(models.Model):
+    community_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.TextField(unique=True)
+    description = models.TextField()
+    member_count = models.BigIntegerField(default=0)
+    avatar_url = models.URLField(blank=True, null=True)
+    tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    search_vector = SearchVectorField(null=True, blank=True)
+
+    # Add search functionality once that is complete
+    class Meta:
+        db_table = 'Communities'
+        indexes = [
+            GinIndex(fields=['search_vector']),  # GIN index
+        ]  
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_search_vector()
+
+    def update_search_vector(self):
+        """
+        Update the search_vector field based on title, description, and tags.
+        """
+        # Aggregate tag names into a single string
+        tag_names = " ".join(self.tags.values_list('name', flat=True))
+        
+        # Combine title, description, and tag names
+        combined_text = f"{self.title} {self.description} {tag_names}"
+
+        # Update the search_vector using PostgreSQL's to_tsvector function
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE "Communities"
+                SET search_vector = to_tsvector('english', %s)
+                WHERE community_id = %s
+                """,
+                [combined_text, str(self.community_id)]
+            )
 
 class Projects(models.Model):
     project_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -59,6 +102,7 @@ class Questions(models.Model):
     question_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     asker = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)
     related_project = models.ForeignKey(Projects, on_delete=models.SET_NULL, blank=True, null=True)
+    related_community = models.ForeignKey(Communities, on_delete=models.SET_NULL, blank=True, null=True)
     code_context = models.TextField(blank=True, null=True)
     code_context_full_pathname = models.TextField(blank=True, null=True)
     code_context_line_number = models.IntegerField(blank=True, null=True)
@@ -115,7 +159,7 @@ class Users(models.Model):
     user = models.OneToOneField('AuthUser', on_delete=models.CASCADE, primary_key=True, default=uuid.uuid4)
     username = models.TextField(unique=True)
     pfp_url = models.TextField(blank=True, null=True)
-    reputation = models.BigIntegerField()
+    reputation = models.BigIntegerField(default=0)
 
     class Meta:
         db_table = 'Users'
@@ -139,52 +183,11 @@ class Comments(models.Model):
     class Meta:
         db_table = 'Comments'
 
-class Communities(models.Model):
-    community_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.TextField(unique=True)
-    description = models.TextField()
-    member_count = models.BigIntegerField(default=0)
-    avatar_url = models.URLField(blank=True, null=True)
-    tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    search_vector = SearchVectorField(null=True, blank=True)
-
-    # Add search functionality once that is complete
-    class Meta:
-        db_table = 'Communities'
-        indexes = [
-            GinIndex(fields=['search_vector']),  # GIN index
-        ]  
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.update_search_vector()
-
-    def update_search_vector(self):
-        """
-        Update the search_vector field based on title, description, and tags.
-        """
-        # Aggregate tag names into a single string
-        tag_names = " ".join(self.tags.values_list('name', flat=True))
-        
-        # Combine title, description, and tag names
-        combined_text = f"{self.title} {self.description} {tag_names}"
-
-        # Update the search_vector using PostgreSQL's to_tsvector function
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                UPDATE "Communities"
-                SET search_vector = to_tsvector('english', %s)
-                WHERE community_id = %s
-                """,
-                [combined_text, str(self.community_id)]
-            )
-        
 class CommunityMembers(models.Model):
     community = models.ForeignKey('Communities', on_delete=models.CASCADE)  # delete user from community if community is deleted
     user = models.ForeignKey('Users', on_delete=models.CASCADE)  # delete user from community if user is removed
+    community_reputation = models.BigIntegerField(default=0)
+    contributions = models.BigIntegerField(default=0)
 
     class Meta:
         db_table = 'CommunityMembers'

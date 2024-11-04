@@ -3,19 +3,40 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
-from ..models import Answers, Votes, Users
+from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
+
+'''----- POST REQUESTS -----'''
 
 @api_view(["POST"])
 def createAnswer(request: HttpRequest) -> JsonResponse:
-    """Create an answer
-
+    """
+    Create an answer and increment contributions if the user is a member of the related community.
+    
     Returns:
         JsonResponse:
     """
-    serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF (djang-rest-framework) compatibility
+    serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF compatibility
     if serializer.is_valid():
         answer = serializer.save()  # Save the new answer
+
+        # Check if the question has a related community
+        question = answer.question
+        if question.related_community and answer.expert:
+            community = question.related_community
+            user = answer.expert
+
+            # Check if the user is a member of the community
+            try:
+                community_member = CommunityMembers.objects.get(community=community, user=user)
+                
+                # Increment contributions if the user is a member
+                community_member.contributions += 1
+                community_member.save()
+            except CommunityMembers.DoesNotExist:
+                # If the user is not a member, do nothing
+                pass
+
         serialized_answer = AnswerSerializer(answer)  # Serialize the saved answer
         return JsonResponse(serialized_answer.data, status=status.HTTP_201_CREATED)  # Return the serialized data
 
@@ -23,91 +44,75 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
 
 @api_view(["POST"])
 def upvoteAnswer(request: HttpRequest) -> JsonResponse:
-    """
-    Upvote an answer, increasing its score by 1.
-    If the user has already downvoted, switch to upvote.
-
-    Args:
-        request (HttpRequest): The incoming HTTP request containing user_id and answer_id.
-
-    Returns:
-        JsonResponse: The updated score or an error message.
-    """
     user_id = request.data.get('user_id')
     answer_id = request.data.get('answer_id')
 
     user = get_object_or_404(Users, pk=user_id)
     answer = get_object_or_404(Answers, pk=answer_id)
+    question = answer.question
 
-    # Check if the user has already upvoted
+    # Check if the user has already upvoted or downvoted
     existing_vote = Votes.objects.filter(user=user, answer=answer).first()
 
-    # If the user has already upvoted, change vote to neutral
+    # Handle upvote and reputation adjustments
     if existing_vote and existing_vote.vote_type == 'upvote':
         existing_vote.delete()
         answer.score -= 1
         answer.save()
-        return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
+        adjust_community_reputation(answer, question, -1)
+        return JsonResponse({"message": "Upvote removed", "new_score": answer.score}, status=status.HTTP_200_OK)
     
-    # If user has downvoted, switch to upvote
     if existing_vote and existing_vote.vote_type == 'downvote':
         existing_vote.delete()
         Votes.objects.create(user=user, answer=answer, vote_type='upvote')
-        answer.score += 2  # Increment score by 2
+        answer.score += 2
         answer.save()
-        return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
+        adjust_community_reputation(answer, question, 2)
+        return JsonResponse({"message": "Vote switched to upvote", "new_score": answer.score}, status=status.HTTP_200_OK)
 
-    # Record the upvote
+    # Record a new upvote
     Votes.objects.create(user=user, answer=answer, vote_type='upvote')
-    answer.score += 1  # Increment score by 1
+    answer.score += 1
     answer.save()
-
-    # Return the updated vote count
+    adjust_community_reputation(answer, question, 1)
     return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 def downvoteAnswer(request: HttpRequest) -> JsonResponse:
-    """
-    Downvote an answer, decreasing its score by 1.
-    If the user has already upvoted, switch to downvote.
-
-    Args:
-        request (HttpRequest): The incoming HTTP request containing user_id and answer_id.
-
-    Returns:
-        JsonResponse: The updated score or an error message.
-    """
     user_id = request.data.get('user_id')
     answer_id = request.data.get('answer_id')
 
     user = get_object_or_404(Users, pk=user_id)
     answer = get_object_or_404(Answers, pk=answer_id)
+    question = answer.question  # Get the related question
 
-    # Check if the user has already downvoted
+    # Check if the user has already downvoted or upvoted
     existing_vote = Votes.objects.filter(user=user, answer=answer).first()
 
-    # If the user has already downvoted, change vote to neutral
+    # Handle downvote and reputation adjustments
     if existing_vote and existing_vote.vote_type == 'downvote':
         existing_vote.delete()
         answer.score += 1
         answer.save()
-        return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
-    
-    # If user has upvoted, switch to downvote
+        adjust_community_reputation(answer, question, 1)
+        return JsonResponse({"message": "Downvote removed", "new_score": answer.score}, status=status.HTTP_200_OK)
+
     if existing_vote and existing_vote.vote_type == 'upvote':
         existing_vote.delete()
         Votes.objects.create(user=user, answer=answer, vote_type='downvote')
-        answer.score -= 2  # Decrement score by 2
+        answer.score -= 2
         answer.save()
-        return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
+        adjust_community_reputation(answer, question, -2)
+        return JsonResponse({"message": "Vote switched to downvote", "new_score": answer.score}, status=status.HTTP_200_OK)
 
-    # Record the downvote
+    # Record a new downvote
     Votes.objects.create(user=user, answer=answer, vote_type='downvote')
-    answer.score -= 1  # Decrement score by 1
+    answer.score -= 1
     answer.save()
-
-    # Return the updated vote count
+    adjust_community_reputation(answer, question, -1)
     return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
+
+'''----- GET REQUESTS -----'''
 
 @api_view(["GET"])
 def getAnswersByQuestionId(request: HttpRequest, question_id: str) -> JsonResponse:
@@ -136,3 +141,26 @@ def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_
         answer['curr_user_downvoted'] = user_vote.vote_type == 'downvote' if user_vote else False
 
     return JsonResponse(serialized_answers, safe=False, status=status.HTTP_200_OK)
+
+'''----- HELPER FUNCTIONS -----'''
+
+def adjust_community_reputation(answer, question, reputation_change):
+    """
+    Adjusts the community reputation of the answer's author based on the reputation change value
+    only if they are already a member of the community.
+    """
+    # Check if the question is related to a community and the answer's author is defined
+    if question.related_community and answer.expert:
+        community = question.related_community
+        user = answer.expert
+
+        # Check if the user is already a member of the community
+        try:
+            community_member = CommunityMembers.objects.get(community=community, user=user)
+            
+            # Update the community reputation if the user is a member
+            community_member.community_reputation += reputation_change
+            community_member.save()
+        except CommunityMembers.DoesNotExist:
+            # If the user is not a member of the community, do nothing
+            pass

@@ -1,10 +1,10 @@
 from rest_framework.decorators import api_view
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.http import JsonResponse, HttpRequest
 from django.http import JsonResponse
 from rest_framework import status
 from ..models import Communities, CommunityMembers, Users
-from ..serializers import CommunitySerializer
+from ..serializers import CommunitySerializer, CommunityMemberSerializer
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Q
@@ -29,7 +29,7 @@ def createCommunity(request: HttpRequest) -> JsonResponse:
     if serializer.is_valid():
         community = serializer.save()  # Save the valid data as a new Community instance
         return JsonResponse(
-            {"community_id": community.community_id}, status=status.HTTP_201_CREATED
+            {"community_id": community.community_id, "title": community.title}, status=status.HTTP_201_CREATED
         )
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -104,9 +104,9 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
         search_vector = SearchQuery(search_query, search_type='websearch')
         communities = communities.annotate(
             rank=SearchRank('search_vector', search_vector)
-        ).filter(search_vector=search_vector).order_by('-rank', '-created_at')
+        ).filter(search_vector=search_vector).order_by('-rank', '-member_count')
     else:
-        communities = communities.order_by('-created_at')
+        communities = communities.order_by('-member_count')
 
     # Filter communities by tags if any tags are provided
     if selected_tags:
@@ -144,6 +144,45 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
     return JsonResponse(response_data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
+def getAllCommunityOptions(request: HttpRequest) -> JsonResponse:
+    """
+    Retrieve all communties from the database and serialize them
+    to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+
+    Returns:
+        Json
+    """
+    communities = Communities.objects.all()
+    serializer = CommunitySerializer(communities, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+@api_view(["GET"])
+def getAllCommunityMembers(request: HttpRequest, community_id: str) -> JsonResponse:
+    """
+    Get all community members by community ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        community_id (str): The ID of the community.
+
+    Returns:
+        JsonResponse: A response indicating whether the user is part of the community.
+    """
+    # Validate community
+    community = get_object_or_404(Communities, community_id=community_id)
+
+    # Get the users that are part of the community
+    members = CommunityMembers.objects.filter(community=community).order_by('-community_reputation')
+    
+    # Serialize the list of members, setting many=True to indicate multiple objects
+    serializer = CommunityMemberSerializer(members, many=True)
+
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
 def getCommunityById(request: HttpRequest, community_id: str) -> JsonResponse:
     """
     Retrieve a single community by its ID and serialize it to JSON format.
@@ -176,6 +215,22 @@ def getCommunityByTitle(request: HttpRequest, title: str) -> JsonResponse:
     community = get_object_or_404(Communities, title=title)  # Get the community or return 404
     serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def getUserCommunitiesById(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Retrieve all communities associated with a user's ID and return them in JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user whose communities are to be retrieved.
+
+    Returns:
+        JsonResponse: A response containing serialized data for the user's communities.
+    """
+    communities = get_list_or_404(CommunityMembers, user=user_id)
+    serializer = CommunityMemberSerializer(communities, many=True)  # Serialize multiple instances
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def userIsPartOfCommunity(request: HttpRequest, title: str, user_id: str) -> JsonResponse:
