@@ -158,7 +158,8 @@ class Tags(models.Model):
 class Users(models.Model):
     user = models.OneToOneField('AuthUser', on_delete=models.CASCADE, primary_key=True, default=uuid.uuid4)
     username = models.TextField(unique=True)
-    pfp_url = models.TextField(blank=True, null=True)
+    reputation = models.BigIntegerField()
+    profile_image_url = models.URLField(null=True, blank=True)  # URL to image in Supabase
     reputation = models.BigIntegerField(default=0)
 
     class Meta:
