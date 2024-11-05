@@ -164,10 +164,7 @@ def searchQuestions(request):
     query = request.GET.get('q', '').strip()
     tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
 
-    # logger.debug(f"Received search query: '{query}' with tags: {tags}")
-
     if not query and not tags:
-        # logger.debug("No search query or tags provided.")
         return JsonResponse(
             {"error": "No search query or tags provided."},
             status=status.HTTP_400_BAD_REQUEST
@@ -215,9 +212,7 @@ def searchQuestions(request):
         try:
             # Convert tag IDs to UUID objects
             tag_uuids = [UUID(tag_id) for tag_id in tags]
-            # logger.debug(f"Converted tag IDs to UUIDs: {tag_uuids}")
         except ValueError:
-            # logger.error("Invalid tag IDs provided.")
             return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         tag_filters = Q()
@@ -226,12 +221,31 @@ def searchQuestions(request):
         
         combined_filters &= tag_filters
 
-    # logger.debug(f"Combined Filters: {combined_filters}")
-
     # Apply the combined AND filters
     questions = questions.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
 
-    # logger.debug(f"Number of questions after filtering: {questions.count()}")
+    # Implement Pagination
+    page = request.GET.get('page', 1)
+    page_size = request.GET.get('page_size', 20)  # Default page size
 
-    serializer = QuestionSerializer(questions, many=True)
-    return JsonResponse({"results": serializer.data}, status=status.HTTP_200_OK)
+    try:
+        page = int(page)
+        page_size = int(page_size)
+        if page < 1 or page_size < 1:
+            raise ValueError
+    except ValueError:
+        return JsonResponse({'error': 'Invalid page or page_size parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    paginator = Paginator(questions, page_size)
+    try:
+        paginated_questions = paginator.page(page)
+    except PageNotAnInteger:
+        paginated_questions = paginator.page(1)
+    except EmptyPage:
+        paginated_questions = paginator.page(paginator.num_pages)
+
+    serializer = QuestionSerializer(paginated_questions.object_list, many=True)
+    return JsonResponse({
+        "results": serializer.data,
+        "totalQuestions": paginator.count
+    }, status=status.HTTP_200_OK)
