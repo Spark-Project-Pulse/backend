@@ -116,7 +116,9 @@ class Questions(models.Model):
     class Meta:
         db_table = 'Questions'
         indexes = [
-            GinIndex(fields=['search_vector']),  # GIN index
+            GinIndex(fields=['search_vector']),
+            GinIndex(fields=['title'], name='title_trgm', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['description'], name='description_trgm', opclasses=['gin_trgm_ops']),
         ]
 
     def save(self, *args, **kwargs):
@@ -138,7 +140,7 @@ class Questions(models.Model):
             cursor.execute(
                 """
                 UPDATE "Questions"
-                SET search_vector = to_tsvector('english', %s)
+                SET search_vector = to_tsvector('english', unaccent(%s))
                 WHERE question_id = %s
                 """,
                 [combined_text, str(self.question_id)]
@@ -153,6 +155,9 @@ class Tags(models.Model):
 
     class Meta:
         db_table = 'Tags'
+        indexes = [
+            GinIndex(fields=['name'], name='tags_name_trgm', opclasses=['gin_trgm_ops']),
+        ]
 
 
 class Users(models.Model):

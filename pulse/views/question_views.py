@@ -5,15 +5,18 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
 from rest_framework import status
 from ..models import Questions
 from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.decorators import throttle_classes
 from django.core.paginator import Paginator, EmptyPage
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
+from django.db.models.functions import Greatest
+from django.contrib.postgres.aggregates import StringAgg
 from uuid import UUID
+import logging
 
 @api_view(["POST"])
 def createQuestion(request: HttpRequest) -> JsonResponse:
@@ -145,39 +148,92 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
+# logger = logging.getLogger(__name__)
+
 class BurstUserRateThrottle(UserRateThrottle):
     rate = '10/min'
 
 class BurstAnonRateThrottle(AnonRateThrottle):
     rate = '5/min'
 
+
 @require_GET
 @csrf_exempt 
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
 def search_questions(request):
-    query = request.GET.get('q', '')
-    tags = request.GET.getlist('tags')
+    query = request.GET.get('q', '').strip()
+    tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
+
+    # logger.debug(f"Received search query: '{query}' with tags: {tags}")
 
     if not query and not tags:
+        # logger.debug("No search query or tags provided.")
         return JsonResponse(
             {"error": "No search query or tags provided."},
-            status=400
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    search_query = SearchQuery(query, search_type="websearch") if query else None
     questions = Questions.objects.all()
 
-    # Apply full-text search filter if there's a search query
-    if search_query:
+    # Initialize combined_filters as Q() for AND logic
+    combined_filters = Q()
+
+    # Handle search query
+    if query:
+        # Define the search vector with weights
+        search_vector = (
+            SearchVector('title', weight='A') +
+            SearchVector('description', weight='B') +
+            SearchVector('tags__name', weight='C')
+        )
+        search_query = SearchQuery(query, search_type="websearch")
+        
+        # Annotate with full-text search rank and trigram similarities
         questions = questions.annotate(
-            rank=SearchRank('search_vector', search_query)
-        ).filter(search_vector=search_query).order_by('-rank', '-created_at')
+            rank=SearchRank(search_vector, search_query),
+            similarity_title=TrigramSimilarity('title', query),
+            similarity_description=TrigramSimilarity('description', query),
+        ).annotate(
+            tag_names=StringAgg('tags__name', delimiter=' ', distinct=True)
+        ).annotate(
+            similarity_tags=TrigramSimilarity('tag_names', query)
+        ).annotate(
+            total_similarity=Greatest(
+                F('similarity_title'),
+                F('similarity_description'),
+                F('similarity_tags')
+            )
+        )
 
+        # Combine search filters using OR logic within search criteria
+        search_filter = Q(search_vector=search_query) | Q(total_similarity__gt=0.05) 
+
+        combined_filters &= search_filter
+
+    # Handle tag filters
     if tags:
-        questions = questions.filter(tags__name__in=tags).distinct()
+        try:
+            # Convert tag IDs to UUID objects
+            tag_uuids = [UUID(tag_id) for tag_id in tags]
+            # logger.debug(f"Converted tag IDs to UUIDs: {tag_uuids}")
+        except ValueError:
+            # logger.error("Invalid tag IDs provided.")
+            return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        tag_filters = Q()
+        for tag_uuid in tag_uuids:
+            tag_filters &= Q(tags__tag_id=tag_uuid)
+        
+        combined_filters &= tag_filters
 
-    #Temporary: until pagination is implemented
+    # logger.debug(f"Combined Filters: {combined_filters}")
+
+    # Apply the combined AND filters
+    questions = questions.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
+
+    # logger.debug(f"Number of questions after filtering: {questions.count()}")
+
     questions = questions[:10]
 
     serializer = QuestionSerializer(questions, many=True)
-    return JsonResponse({"results": serializer.data}, status=200)
+    return JsonResponse({"results": serializer.data}, status=status.HTTP_200_OK)
