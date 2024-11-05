@@ -233,7 +233,5 @@ def search_questions(request):
 
     # logger.debug(f"Number of questions after filtering: {questions.count()}")
 
-    questions = questions[:10]
-
     serializer = QuestionSerializer(questions, many=True)
     return JsonResponse({"results": serializer.data}, status=status.HTTP_200_OK)
