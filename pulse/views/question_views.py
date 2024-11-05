@@ -160,7 +160,7 @@ class BurstAnonRateThrottle(AnonRateThrottle):
 @require_GET
 @csrf_exempt 
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
-def search_questions(request):
+def searchQuestions(request):
     query = request.GET.get('q', '').strip()
     tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
 
