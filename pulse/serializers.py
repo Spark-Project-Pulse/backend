@@ -43,6 +43,13 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Projects
         fields = '__all__'
+        
+class CommunitySerializer(serializers.ModelSerializer):
+    rank = serializers.FloatField(read_only=True)
+    
+    class Meta:
+        model = Communities
+        fields = '__all__'
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,6 +61,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     asker_info = UserSerializer(source='asker', read_only=True)
     rank = serializers.FloatField(read_only=True)
     related_project_info = ProjectSerializer(source='related_project', read_only=True)
+    related_community_info = CommunitySerializer(source='related_community', read_only=True)
     
     class Meta:
         model = Questions
@@ -62,13 +70,6 @@ class QuestionSerializer(serializers.ModelSerializer):
 class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Votes
-        fields = '__all__'
-        
-class CommunitySerializer(serializers.ModelSerializer):
-    rank = serializers.FloatField(read_only=True)
-    
-    class Meta:
-        model = Communities
         fields = '__all__'
         
 class CommunityMemberSerializer(serializers.ModelSerializer):
