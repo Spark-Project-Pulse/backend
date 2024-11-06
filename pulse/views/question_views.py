@@ -161,8 +161,11 @@ class BurstAnonRateThrottle(AnonRateThrottle):
 @csrf_exempt 
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
 def searchQuestions(request):
+    # Get query parameters
     query = request.GET.get('q', '').strip()
     tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
+    page_number = request.GET.get('page', 1)
+    page_size = request.GET.get('page_size', 20)  # Default page size
 
     if not query and not tags:
         return JsonResponse(
@@ -225,20 +228,17 @@ def searchQuestions(request):
     questions = questions.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
 
     # Implement Pagination
-    page = request.GET.get('page', 1)
-    page_size = request.GET.get('page_size', 20)  # Default page size
-
     try:
-        page = int(page)
+        page_number = int(page_number)
         page_size = int(page_size)
-        if page < 1 or page_size < 1:
+        if page_number < 1 or page_size < 1:
             raise ValueError
     except ValueError:
         return JsonResponse({'error': 'Invalid page or page_size parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     paginator = Paginator(questions, page_size)
     try:
-        paginated_questions = paginator.page(page)
+        paginated_questions = paginator.page(page_number)
     except PageNotAnInteger:
         paginated_questions = paginator.page(1)
     except EmptyPage:
@@ -246,6 +246,8 @@ def searchQuestions(request):
 
     serializer = QuestionSerializer(paginated_questions.object_list, many=True)
     return JsonResponse({
-        "results": serializer.data,
-        "totalQuestions": paginator.count
+        'questions': serializer.data,
+        'totalQuestions': paginator.count,
+        'totalPages': paginator.num_pages,
+        'currentPage': page_number,
     }, status=status.HTTP_200_OK)
