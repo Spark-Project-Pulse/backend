@@ -204,11 +204,11 @@ class CommunityMembers(models.Model):
 
 class Notifications(models.Model):
     NOTIFICATION_TYPES = [
-        ('new_answer', 'New Answer'),
-        ('new_comment', 'New Comment'),
-        ('answer_accepted', 'Answer Accepted'),
-        ('mention', 'Mention'),
-        ('vote', 'Vote Received')
+        ('question_answered', 'New Answer'),
+        ('answer_commented', 'New Comment'),
+        ('question_upvoted', 'Answer Accepted'),
+        ('answer_accepted', 'Mention'),
+        ('mention', 'Vote Received')
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
