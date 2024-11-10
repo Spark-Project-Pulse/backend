@@ -19,4 +19,4 @@ def getAllNotifications(request: HttpRequest) -> JsonResponse:
     """
     tags = Notifications.objects.all()
     serializer = NotificationSerializer(tags, many=True)
-    return JsonResponse(serializer.data, safe=False)
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
