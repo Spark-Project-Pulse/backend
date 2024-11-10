@@ -94,6 +94,12 @@ class CommunityMemberSerializer(serializers.ModelSerializer):
     
 
 class NotificationSerializer(serializers.ModelSerializer):
+    recipient_info = UserSerializer(source='recipient', read_only=True)
+    question_info = QuestionSerializer(source='question', read_only=True)
+    answer_info = AnswerSerializer(source='answer', read_only=True)
+    comment_info = CommentSerializer(source='comment', read_only=True)
+    actor_info = UserSerializer(source='actor', read_only=True)
+
     class Meta:
         model = Notifications
         fields = '__all__'
