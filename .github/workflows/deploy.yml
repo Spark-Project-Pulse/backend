@@ -69,6 +69,7 @@ jobs:
           -e K_SERVICE=foo \
           -e GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
+          -e RUNNING_MIGRATION=1 \
           -v /tmp/gcp-key.json:/app/gcp-key.json \
           ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
           python manage.py migrate 

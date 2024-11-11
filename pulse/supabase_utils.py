@@ -3,7 +3,10 @@
 
 from django.conf import settings
 from supabase import create_client, Client
-from transformers import pipeline
+import os
+
+if os.getenv("RUNNING_MIGRATION") != "1":
+    from transformers import pipeline
 
 def get_supabase_client() -> Client:
   url: str = settings.SUPABASE_URL
