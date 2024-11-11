@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 from rest_framework import status
 from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
+from services.notification_service import NotificationService
 
 '''----- POST REQUESTS -----'''
 
@@ -18,7 +19,9 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
     """
     serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF compatibility
     if serializer.is_valid():
-        answer = serializer.save()  # Save the new answer
+        answer: Answers = serializer.save()  # Save the new answer
+
+        NotificationService.handle_new_answer(answer) # Handle notifications
 
         # Check if the question has a related community
         question = answer.question
