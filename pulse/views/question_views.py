@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
 from rest_framework import status
+from ..supabase_utils import checkContent
 from ..models import Questions
 from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
@@ -35,6 +36,12 @@ def createQuestion(request: HttpRequest) -> JsonResponse:
         data=request.data
     )  # Deserialize and validate the data
     if serializer.is_valid():
+        # Content moderation
+        title_text = request.data['title']
+        description_text = request.data['description']
+        if checkContent(title_text) or checkContent(description_text):
+            return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         question = serializer.save()  # Save the valid data as a new Question instance
         return JsonResponse(
             {"question_id": question.question_id}, status=status.HTTP_201_CREATED
