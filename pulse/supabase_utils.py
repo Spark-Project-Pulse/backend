@@ -17,7 +17,7 @@ model_name = "unitary/toxic-bert"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
-def checkContent(text, threshold=0.003):
+def check_content(text, threshold=0.003):
   """
   Checks if the provided text contains toxic content.
 
