@@ -14,6 +14,7 @@ djangorestframework = "*"
 google-cloud-secret-manager = "*"
 transformers = "*"
 torch = "*"
+strenum = "*"
 
 [dev-packages]
 
