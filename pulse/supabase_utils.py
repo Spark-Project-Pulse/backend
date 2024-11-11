@@ -3,18 +3,18 @@
 
 from django.conf import settings
 from supabase import create_client, Client
+from transformers import pipeline
 
 def get_supabase_client() -> Client:
   url: str = settings.SUPABASE_URL
   key: str = settings.SUPABASE_ANON_KEY
   return create_client(url, key)
 
-from transformers import pipeline
 
 # Load toxicity model
 toxicity_model = pipeline("text-classification", model="unitary/toxic-bert", return_all_scores=True)
 
-def checkContent(text, threshold=0.9):
+def check_content(text, threshold=0.9):
   """
   Checks if the provided text contains toxic content.
 
