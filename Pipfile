@@ -13,7 +13,7 @@ psycopg2-binary = "*"
 djangorestframework = "*"
 google-cloud-secret-manager = "*"
 transformers = "*"
-torch = "*"
+torch = { version = "*", index = "https://pypi.org/simple", extras = ["cpu"] }
 strenum = "*"
 
 [dev-packages]

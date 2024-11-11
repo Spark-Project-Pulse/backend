@@ -6,11 +6,6 @@ from supabase import create_client, Client
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 
-if torch.cuda.is_available():
-    print(f"CUDA is available. Using GPU: {torch.cuda.get_device_name(0)}")
-else:
-    print("CUDA is not available. Using CPU.")
-    
 def get_supabase_client() -> Client:
   url: str = settings.SUPABASE_URL
   key: str = settings.SUPABASE_ANON_KEY
