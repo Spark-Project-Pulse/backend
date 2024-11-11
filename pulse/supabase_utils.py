@@ -10,11 +10,16 @@ def get_supabase_client() -> Client:
   key: str = settings.SUPABASE_ANON_KEY
   return create_client(url, key)
 
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import torch
 
 # Load toxicity model
-toxicity_model = pipeline("text-classification", model="unitary/toxic-bert", return_all_scores=True)
+# Load tokenizer and model
+model_name = "unitary/toxic-bert"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
-def check_content(text, threshold=0.9):
+def checkContent(text, threshold=0.003):
   """
   Checks if the provided text contains toxic content.
 
@@ -26,12 +31,17 @@ def check_content(text, threshold=0.9):
     bool: True if toxic content is detected, otherwise False.
   """
 
-  # Run the model on the input text
-  predictions = toxicity_model(text)
+  # Encode the input text
+  inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
 
-  # Process the model's output
-  for prediction in predictions[0]:
-    # Check if label is 'toxic' and confidence is above threshold
-    if prediction['label'] == 'toxic' and prediction['score'] >= threshold:
-      return True
-  return False
+  # Get the model's predictions
+  with torch.no_grad():
+    outputs = model(**inputs)
+  
+  # Get the probability of toxic content (lower the more toxic)
+  logits = outputs.logits
+  probabilities = torch.softmax(logits, dim=1)
+  toxicity_score = probabilities[0][1].item()
+
+  # Return True if the toxicity score exceeds the threshold
+  return toxicity_score <= threshold
