@@ -3,9 +3,10 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
-from ..supabase_utils import checkContent
+from ..supabase_utils import check_content
 from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
+from services.notification_service import NotificationService
 
 '''----- POST REQUESTS -----'''
 
@@ -21,10 +22,12 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
     if serializer.is_valid():
         # Content moderation
         response_text = request.data['response']
-        if checkContent(response_text):
-            return JsonResponse({"toxic": True}, status=status.HTTP_201_CREATED)
+        if check_content(response_text):
+            return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
         
-        answer = serializer.save()  # Save the new answer
+        answer: Answers = serializer.save()  # Save the new answer
+
+        NotificationService.handle_new_answer(answer) # Handle notifications
 
         # Check if the question has a related community
         question = answer.question

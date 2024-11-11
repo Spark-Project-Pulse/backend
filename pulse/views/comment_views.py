@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
-from ..supabase_utils import checkContent
+from ..supabase_utils import check_content
 from ..models import Comments
 from ..serializers import CommentSerializer
 
@@ -23,8 +23,8 @@ def createComment(request: HttpRequest) -> JsonResponse:
     if serializer.is_valid():
         # Content moderation
         response_text = request.data['response']
-        if checkContent(response_text):
-            return JsonResponse({"toxic": True}, status=status.HTTP_201_CREATED)
+        if check_content(response_text):
+            return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
         comment = serializer.save()  # Save the new comment
         serialized_comment = CommentSerializer(comment)  # Serialize the saved comment
         return JsonResponse(serialized_comment.data, status=status.HTTP_201_CREATED)  # Return the serialized data

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Answers, Questions, Projects, Users, Comments, Tags, Votes, Communities, CommunityMembers
+from .models import *
 
 # NOTE: Each model should have a corresponding serializer to handle validation and
 # conversion of incoming data, as well as serializing outgoing data to be
@@ -91,3 +91,15 @@ class CommunityMemberSerializer(serializers.ModelSerializer):
             representation['community_reputation'] = 0
         
         return representation
+    
+
+class NotificationSerializer(serializers.ModelSerializer):
+    recipient_info = UserSerializer(source='recipient', read_only=True)
+    question_info = QuestionSerializer(source='question', read_only=True)
+    answer_info = AnswerSerializer(source='answer', read_only=True)
+    comment_info = CommentSerializer(source='comment', read_only=True)
+    actor_info = UserSerializer(source='actor', read_only=True)
+
+    class Meta:
+        model = Notifications
+        fields = '__all__'

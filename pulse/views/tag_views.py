@@ -40,4 +40,4 @@ def getAllTags(request: HttpRequest) -> JsonResponse:
     """
     tags = Tags.objects.all()
     serializer = TagSerializer(tags, many=True)
-    return JsonResponse(serializer.data, safe=False)
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
