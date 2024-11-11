@@ -23,7 +23,7 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
         # Content moderation
         response_text = request.data['response']
         if check_content(response_text):
-            return JsonResponse({"toxic": True}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
         
         answer: Answers = serializer.save()  # Save the new answer
 
