@@ -170,7 +170,6 @@ class Users(models.Model):
     class Meta:
         db_table = 'Users'
 
-
 class AuthUser(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Add any other fields that are needed in the Supabase auth table
@@ -178,7 +177,20 @@ class AuthUser(models.Model):
     class Meta:
         managed = False  # Indicating that Django should not manage this table
         db_table = 'auth"."users'
-    
+        
+class UserRoles(models.Model):
+    # Role choices for role type
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('admin', 'Admin'),
+    ] 
+
+    role = models.OneToOneField('Users', on_delete=models.CASCADE, primary_key=True, default=uuid.uuid4)  # Change 'User' to 'Users'
+    role_type = models.CharField(max_length=5, choices=ROLE_CHOICES, default='user')
+
+    class Meta:
+        db_table = 'UserRoles'
+
 class Comments(models.Model):
     comment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     expert = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)               # don't delete comment if user is removed (just make anon)
