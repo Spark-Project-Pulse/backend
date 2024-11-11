@@ -66,12 +66,11 @@ class NotificationService:
         """Handle notifications for a new answer."""
         question: Questions = answer.question
 
-        # TODO: leaving the following line commented for now (to make it easier for testing notifications)
-        # if question.asker != answer.expert:  # Don't notify if user answers their own question
-        cls.create_notification(
-            recipient_id=question.asker,
-            notification_type='question_answered',
-            question=question,
-            answer=answer,
-            actor_id=answer.expert
-        )
+        if question.asker != answer.expert:  # Don't notify if user answers their own question
+            cls.create_notification(
+                recipient_id=question.asker,
+                notification_type='question_answered',
+                question=question,
+                answer=answer,
+                actor_id=answer.expert
+            )
