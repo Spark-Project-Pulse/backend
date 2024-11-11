@@ -40,7 +40,7 @@ def createQuestion(request: HttpRequest) -> JsonResponse:
         title_text = request.data['title']
         description_text = request.data['description']
         if check_content(title_text) or check_content(description_text):
-            return JsonResponse({"question_id": "undefined", "toxic": True}, status=status.HTTP_201_CREATED)
+            return JsonResponse({"question_id": "undefined", "toxic": True}, status=status.HTTP_400_BAD_REQUEST)
         question = serializer.save()  # Save the valid data as a new Question instance
         return JsonResponse(
             {"question_id": question.question_id}, status=status.HTTP_201_CREATED

@@ -24,7 +24,7 @@ def createComment(request: HttpRequest) -> JsonResponse:
         # Content moderation
         response_text = request.data['response']
         if check_content(response_text):
-            return JsonResponse({"toxic": True}, status=status.HTTP_201_CREATED)
+            return JsonResponse({"toxic": True}, status=status.HTTP_400_BAD_REQUEST)
         comment = serializer.save()  # Save the new comment
         serialized_comment = CommentSerializer(comment)  # Serialize the saved comment
         return JsonResponse(serialized_comment.data, status=status.HTTP_201_CREATED)  # Return the serialized data
