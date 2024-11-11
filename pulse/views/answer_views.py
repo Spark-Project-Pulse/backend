@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
+from ..supabase_utils import check_content
 from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
 from services.notification_service import NotificationService
@@ -19,6 +20,11 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
     """
     serializer = AnswerSerializer(data=request.data)  # Use request.data for DRF compatibility
     if serializer.is_valid():
+        # Content moderation
+        response_text = request.data['response']
+        if check_content(response_text):
+            return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
+        
         answer: Answers = serializer.save()  # Save the new answer
 
         NotificationService.handle_new_answer(answer) # Handle notifications
