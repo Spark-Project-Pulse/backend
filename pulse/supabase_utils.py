@@ -3,6 +3,8 @@
 
 from django.conf import settings
 from supabase import create_client, Client
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 
