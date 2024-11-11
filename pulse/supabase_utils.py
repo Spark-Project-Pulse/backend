@@ -3,15 +3,13 @@
 
 from django.conf import settings
 from supabase import create_client, Client
-from transformers import pipeline
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import torch
 
 def get_supabase_client() -> Client:
   url: str = settings.SUPABASE_URL
   key: str = settings.SUPABASE_ANON_KEY
   return create_client(url, key)
-
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import torch
 
 # Load toxicity model
 # Load tokenizer and model
