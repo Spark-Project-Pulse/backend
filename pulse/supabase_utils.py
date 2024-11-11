@@ -33,8 +33,5 @@ def checkContent(text, threshold=0.9):
   for prediction in predictions[0]:
     # Check if label is 'toxic' and confidence is above threshold
     if prediction['label'] == 'toxic' and prediction['score'] >= threshold:
-      print('Toxicity found')
       return True
-
-  print('No toxicity found')
   return False
