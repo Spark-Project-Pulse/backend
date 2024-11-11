@@ -6,6 +6,7 @@ from rest_framework import status
 from ..supabase_utils import checkContent
 from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
+from services.notification_service import NotificationService
 
 '''----- POST REQUESTS -----'''
 
@@ -24,7 +25,9 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
         if checkContent(response_text):
             return JsonResponse({"toxic": True}, status=status.HTTP_201_CREATED)
         
-        answer = serializer.save()  # Save the new answer
+        answer: Answers = serializer.save()  # Save the new answer
+
+        NotificationService.handle_new_answer(answer) # Handle notifications
 
         # Check if the question has a related community
         question = answer.question
