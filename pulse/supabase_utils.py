@@ -6,6 +6,7 @@ from supabase import create_client, Client
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 
+
 def get_supabase_client() -> Client:
   url: str = settings.SUPABASE_URL
   key: str = settings.SUPABASE_ANON_KEY
