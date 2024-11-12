@@ -55,6 +55,7 @@ jobs:
           --ingress all \
           --allow-unauthenticated \
           --cpu-throttling \
+          --memory=2Gi \
           --min-instances 0 \
           --max-instances 10 \
           --port 8000 \

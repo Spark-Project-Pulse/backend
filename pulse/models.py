@@ -212,3 +212,35 @@ class CommunityMembers(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['community', 'user'], name='unique_community_user')
         ]
+
+
+class Notifications(models.Model):
+    NOTIFICATION_TYPES = [
+        ('question_answered', 'New Answer'),
+        ('answer_commented', 'New Comment'),
+        ('question_upvoted', 'Answer Accepted'),
+        ('answer_accepted', 'Mention'),
+        ('mention', 'Vote Received')
+    ]
+
+    notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    recipient = models.ForeignKey('Users', on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    
+    # References to related entities
+    question = models.ForeignKey('Questions', on_delete=models.CASCADE, null=True, blank=True)
+    answer = models.ForeignKey('Answers', on_delete=models.CASCADE, null=True, blank=True)
+    comment = models.ForeignKey('Comments', on_delete=models.CASCADE, null=True, blank=True)
+    actor = models.ForeignKey('Users', on_delete=models.SET_NULL, null=True, related_name='notifications_triggered')
+    
+    message = models.TextField()
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Notifications'
+        # queries which filter/sort on (recipient, -createt_at) or (recipient, read) will be faster using indexes
+        indexes = [
+            models.Index(fields=['recipient', '-created_at']),
+            models.Index(fields=['recipient', 'read'])
+        ]
