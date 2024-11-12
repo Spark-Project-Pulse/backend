@@ -11,11 +11,16 @@ def get_supabase_client() -> Client:
   key: str = settings.SUPABASE_ANON_KEY
   return create_client(url, key)
 
+# Ensure the code runs on CPU only
+device = torch.device("cpu")
+                      
 # Load toxicity model
 # Load tokenizer and model
 model_name = "unitary/toxic-bert"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
+
+model.to(device)
 
 def check_content(text, threshold=0.003):
   """
