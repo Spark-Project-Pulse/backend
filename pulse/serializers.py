@@ -19,6 +19,11 @@ class UserSerializer(serializers.ModelSerializer):
             representation['reputation'] = 0
         
         return representation
+    
+class UserRolesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRoles
+        fields = '__all__'
         
 class AnswerSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the answerer as a dictionary, based on the expert_id (for GET requests)

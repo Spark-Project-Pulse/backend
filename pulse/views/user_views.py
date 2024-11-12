@@ -5,9 +5,10 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from rest_framework import status
 from ..supabase_utils import get_supabase_client
-from ..models import Users
-from ..serializers import UserSerializer
+from ..models import Users, UserRoles
+from ..serializers import UserSerializer, UserRolesSerializer
 
+'''POST Operations'''
 
 @api_view(["POST"])
 def createUser(request: HttpRequest) -> JsonResponse:
@@ -25,6 +26,8 @@ def createUser(request: HttpRequest) -> JsonResponse:
     serializer = UserSerializer(data=request.data)  # Deserialize and validate the data
     if serializer.is_valid():
         user = serializer.save()  # Save the valid data as a new User instance
+        
+        UserRoles.objects.create(role=user, role_type='user') # Assign the user role to the new user
         return JsonResponse(
             {"user_id": user.user_id}, status=status.HTTP_201_CREATED
         )
@@ -57,6 +60,8 @@ def changeReputationByAmount(request: HttpRequest, user_id: str, amount: str) ->
             {"error": "Unable to change reputation", "details": str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+        
+'''GET Operations'''
 
 @api_view(["GET"])
 def getUserById(request: HttpRequest, user_id: str) -> JsonResponse:
@@ -89,6 +94,23 @@ def getUserByUsername(request: HttpRequest, username: str) -> JsonResponse:
     user = get_object_or_404(Users, username=username)  # Get the user or return 404
     serializer = UserSerializer(user)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def getUserRoleById(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Retrieve the role of a user by their user ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user to retrieve the role for.
+
+    Returns:
+        JsonResponse: A response containing the user role of the requested user.
+    """
+    user_role = get_object_or_404(UserRoles, role=user_id)  # Get the user role or return 404
+    serializer = UserRolesSerializer(user_role)  # Serialize the single instance to JSON
+    return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
 @api_view(["GET"])
 def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
     """
@@ -109,6 +131,8 @@ def userExists(request: HttpRequest, user_id: str) -> JsonResponse:
             {"error": "An error occurred", "details": str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )  # Log the error and return a 500 response for unexpected errors
+        
+'''PUT Operations'''
 
 @api_view(["PUT"])
 @parser_classes([MultiPartParser])  # To handle file uploads
