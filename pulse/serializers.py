@@ -51,6 +51,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         
 class CommunitySerializer(serializers.ModelSerializer):
     rank = serializers.FloatField(read_only=True)
+    owner_info = UserSerializer(source='owner', read_only=True)
     
     class Meta:
         model = Communities

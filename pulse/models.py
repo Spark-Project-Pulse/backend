@@ -43,11 +43,13 @@ class Votes(models.Model):
         
 class Communities(models.Model):
     community_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)
     title = models.TextField(unique=True)
     description = models.TextField()
     member_count = models.BigIntegerField(default=0)
     avatar_url = models.URLField(blank=True, null=True)
     tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
+    approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
     search_vector = SearchVectorField(null=True, blank=True)
