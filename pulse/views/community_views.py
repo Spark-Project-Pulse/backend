@@ -9,6 +9,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Q
 from uuid import UUID
+from services.notification_service import NotificationService
 
 '''POST Requests'''
 
@@ -59,8 +60,9 @@ def approveCommunityRequest(request: HttpRequest, community_id: str) -> JsonResp
     if community.owner:
         CommunityMembers.objects.create(community=community, user=community.owner)
         community.member_count += 1  # Increment member count by 1
+        NotificationService.handle_community_accepted(community) # Handle notifications
         community.save()
-
+        
     return JsonResponse({"message": "Community request approved successfully"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
@@ -77,10 +79,11 @@ def rejectCommunityRequest(request: HttpRequest, community_id: str) -> JsonRespo
     """
     # Get the community or return 404 if not found
     community = get_object_or_404(Communities, community_id=community_id, approved=False)
+    NotificationService.handle_community_rejected(community.owner, community.title) # Handle notifications
 
     # Delete the community request
     community.delete()
-
+    
     return JsonResponse({"message": "Community request rejected successfully"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])

@@ -222,7 +222,9 @@ class Notifications(models.Model):
         ('answer_commented', 'New Comment'),
         ('question_upvoted', 'Answer Accepted'),
         ('answer_accepted', 'Mention'),
-        ('mention', 'Vote Received')
+        ('mention', 'Vote Received'),
+        ('community_accepted', 'Community Accepted'),
+        ('community_rejected', 'Community Rejected'),
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -233,6 +235,8 @@ class Notifications(models.Model):
     question = models.ForeignKey('Questions', on_delete=models.CASCADE, null=True, blank=True)
     answer = models.ForeignKey('Answers', on_delete=models.CASCADE, null=True, blank=True)
     comment = models.ForeignKey('Comments', on_delete=models.CASCADE, null=True, blank=True)
+    community = models.ForeignKey('Communities', on_delete=models.CASCADE, null=True, blank=True)
+    community_title = models.TextField(null=True, blank=True)
     actor = models.ForeignKey('Users', on_delete=models.SET_NULL, null=True, related_name='notifications_triggered')
     
     message = models.TextField()

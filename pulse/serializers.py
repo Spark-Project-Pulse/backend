@@ -105,6 +105,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     answer_info = AnswerSerializer(source='answer', read_only=True)
     comment_info = CommentSerializer(source='comment', read_only=True)
     actor_info = UserSerializer(source='actor', read_only=True)
+    community_info = CommunitySerializer(source='community', read_only=True)
 
     class Meta:
         model = Notifications
