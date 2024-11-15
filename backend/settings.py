@@ -30,6 +30,9 @@ SUPABASE_PORT=get_secret('SUPABASE_PORT')
 SUPABASE_URL=get_secret('SUPABASE_URL')
 SUPABASE_ANON_KEY=get_secret('SUPABASE_ANON_KEY')
 
+# Hugging Face keys
+HUGGINGFACE_TOKEN=get_secret('HUGGINGFACE_TOKEN')
+
 INSTALLED_APPS = [
     'django.contrib.contenttypes', 
     'django.contrib.auth', # TODO: eventually check if we can remove this
