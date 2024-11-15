@@ -6,8 +6,8 @@ from ..views import community_views
 urlpatterns = [
     # POST Requests
     path('createRequest/', community_views.createCommunityRequest, name='createCommunityRequest'),
-    path('approveCommunityRequest/<str:community_id>/', community_views.approveCommunityRequest, name='approveCommunityRequest'),
-    path('rejectCommunityRequest/<str:community_id>/', community_views.rejectCommunityRequest, name='rejectCommunityRequest'),
+    path('approveCommunityRequest/', community_views.approveCommunityRequest, name='approveCommunityRequest'),
+    path('rejectCommunityRequest/', community_views.rejectCommunityRequest, name='rejectCommunityRequest'),
     path('addCommunityMember/', community_views.addCommunityMember, name='addCommunityMember'),
     path('removeCommunityMember/', community_views.removeCommunityMember, name='removeCommunityMember'),
     

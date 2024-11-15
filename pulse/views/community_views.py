@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, get_list_or_404
 from django.http import JsonResponse, HttpRequest
 from django.http import JsonResponse
 from rest_framework import status
-from ..models import Communities, CommunityMembers, Users
+from ..models import Communities, CommunityMembers, Users, UserRoles
 from ..serializers import CommunitySerializer, CommunityMemberSerializer
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage
@@ -37,20 +37,28 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
-def approveCommunityRequest(request: HttpRequest, community_id: str) -> JsonResponse:
+def approveCommunityRequest(request: HttpRequest) -> JsonResponse:
     """
     Approve a community request by setting approved=True. 
     Adds the owner as a community member if approval is successful.
 
     Args:
-        request (HttpRequest): The incoming HTTP request.
-        community_id (str): The ID of the community to approve.
+        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
 
     Returns:
         JsonResponse: A success message or an error message.
     """
+    # Extract community_id and role from the request body
+    community_id = request.data.get('community_id')
+    user_id = request.data.get('user_id')
+    
     # Get the community or return 404 if not found
     community = get_object_or_404(Communities, community_id=community_id, approved=False)
+    user_role = get_object_or_404(UserRoles, role=user_id).role_type
+    
+    # Check if the user has admin privileges
+    if user_role != 'admin':
+        return JsonResponse({"error": "Unauthorized: Admin privileges required"}, status=status.HTTP_403_FORBIDDEN)
 
     # Approve the community request
     community.approved = True
@@ -66,17 +74,28 @@ def approveCommunityRequest(request: HttpRequest, community_id: str) -> JsonResp
     return JsonResponse({"message": "Community request approved successfully"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-def rejectCommunityRequest(request: HttpRequest, community_id: str) -> JsonResponse:
+def rejectCommunityRequest(request: HttpRequest) -> JsonResponse:
     """
     Reject a community request by deleting the community from the database.
 
     Args:
-        request (HttpRequest): The incoming HTTP request.
-        community_id (str): The ID of the community to reject.
+        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
 
     Returns:
         JsonResponse: A success message or an error message.
     """
+    # Extract community_id and role from the request body
+    community_id = request.data.get('community_id')
+    user_id = request.data.get('user_id')
+    
+    # Get the community or return 404 if not found
+    community = get_object_or_404(Communities, community_id=community_id, approved=False)
+    user_role = get_object_or_404(UserRoles, role=user_id).role_type
+    
+    # Check if the user has admin privileges
+    if user_role != 'admin':
+        return JsonResponse({"error": "Unauthorized: Admin privileges required"}, status=status.HTTP_403_FORBIDDEN)
+    
     # Get the community or return 404 if not found
     community = get_object_or_404(Communities, community_id=community_id, approved=False)
     NotificationService.handle_community_rejected(community.owner, community.title) # Handle notifications
