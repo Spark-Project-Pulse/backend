@@ -6,7 +6,7 @@ import re
 # Initialize the InferenceClient with the API key for the Hugging Face Inference API
 client = InferenceClient(api_key=settings.HUGGINGFACE_TOKEN)
 
-def code_review(project_title, project_description, file_name, file_content):
+def generate_code_review(project_title, project_description, file_name, file_content):
     '''
     This function sends a message to the AI model requesting code review suggestions for a given project and file content.
     The AI model is expected to provide at least 5 meaningful and specific suggestions or improvements for the code.
@@ -75,3 +75,32 @@ def code_review(project_title, project_description, file_name, file_content):
             suggestions = None
 
     return suggestions
+
+def generate_ai_answer(question_content):
+    '''
+    This function sends a message to the AI model with a question and returns the answer provided by the model.
+    The AI model is expected to provide a detailed and relevant answer to the question.
+    The function returns the answer as a string or an error if it occurs.
+    '''
+    # Construct the message for the AI model, requesting an answer to the question
+    message_content = f'''
+    You are a programming expert that only responds in plain text. Provide a detailed and relevant answer to the following question:
+    {question_content}
+    '''
+
+    # Call the AI model
+    messages = [{"role": "user", "content": message_content}] 
+    stream = client.chat.completions.create(
+        model="meta-llama/Meta-Llama-3-8B-Instruct", # Use the desired model
+        messages=messages, # Pass the message to the model
+        max_tokens=1000, # Increase max tokens for longer responses
+        stream=True, # Stream the response to avoid timeout
+        temperature=0.8, # Lower temperature for more deterministic results
+    )
+
+    # Process the streaming response
+    response_text = ""
+    for chunk in stream:
+        response_text += chunk.choices[0].delta.content
+
+    return response_text

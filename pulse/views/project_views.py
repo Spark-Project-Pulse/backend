@@ -4,7 +4,7 @@ from django.http import JsonResponse, HttpRequest
 from rest_framework import status
 from ..models import Projects
 from ..serializers import ProjectSerializer
-from services.ai_model_service import code_review
+from services.ai_model_service import generate_code_review
 
 @api_view(["POST"])
 def createProject(request: HttpRequest) -> JsonResponse:
@@ -59,7 +59,7 @@ def codeReview(request: HttpRequest) -> JsonResponse:
             )
 
         # Call the AI model for code review
-        suggestions = code_review(project_title, project_description, file_name, file_content)
+        suggestions = generate_code_review(project_title, project_description, file_name, file_content)
 
         # Return suggestions
         if suggestions:
