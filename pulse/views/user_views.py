@@ -4,7 +4,7 @@ from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from rest_framework import status
-from ..supabase_utils import get_supabase_client
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
 from ..models import Users, UserRoles
 from ..serializers import UserSerializer, UserRolesSerializer
 
@@ -160,38 +160,6 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
         return JsonResponse({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
     image_content = image_file.read()
 
-    # Checks if bucket exists, if not then creates it
-    def create_bucket_if_not_exists(bucket_name):
-        # Check if the bucket exists
-        buckets = supabase.storage.list_buckets()
-
-        # Check if the response is successful and get the list of buckets
-        if isinstance(buckets, list): 
-
-            # Get all bucket names
-            bucket_names = [bucket.name for bucket in buckets]
-
-            # Check if the specified bucket already exists
-            if bucket_name in bucket_names:
-                print(f"Bucket '{bucket_name}' already exists.")
-            else:
-                # Create the bucket since it doesn't exist
-                try:
-                    response = supabase.storage.create_bucket(bucket_name)
-                    if 'error' in response:
-                        print(f"Error creating bucket: {response['error']}")
-                        return False
-                    else:
-                        print(f"Bucket '{bucket_name}' created successfully.")
-                    return True
-                except Exception as e:
-                    print("Error creating bucket: ", e)
-                    return False       
-        else:
-            print(f"Unexpected response format: {buckets}")
-        
-        return True
-
     # Create bucket if it does not exist
     if not create_bucket_if_not_exists('profile-images'):
         return JsonResponse({'error': 'Could not ensure bucket exists.'}, status=500)
@@ -206,9 +174,8 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
         file_options={"content-type": image_file.content_type, "upsert": "true"},
         )
 
-    if response.status_code == 200:
+    if response.path:
         # Store the image URL in the user's profile
-
         user.profile_image_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/profile-images/{upload_path}"
         user.save()
         serializer = UserSerializer(user)

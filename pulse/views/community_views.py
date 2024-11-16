@@ -1,8 +1,9 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.http import JsonResponse, HttpRequest
 from django.http import JsonResponse
 from rest_framework import status
+from django.conf import settings
 from ..models import Communities, CommunityMembers, Users, UserRoles
 from ..serializers import CommunitySerializer, CommunityMemberSerializer
 from django.contrib.postgres.search import SearchQuery, SearchRank
@@ -10,10 +11,13 @@ from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Q
 from uuid import UUID
 from services.notification_service import NotificationService
+from rest_framework.parsers import MultiPartParser
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
 
 '''POST Requests'''
 
 @api_view(["POST"])
+@parser_classes([MultiPartParser])  # To handle file uploads
 def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     """
     Create a community request using the CommunitySerializer to validate
@@ -26,15 +30,46 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
         JsonResponse: A response with the requested community ID if successful,
         or validation errors if the data is invalid.
     """
-    serializer = CommunitySerializer(
-        data=request.data
-    )  # Deserialize and validate the data
-    if serializer.is_valid():
-        community = serializer.save()  # Save the valid data as a new Community instance
-        return JsonResponse(
-            {"community_id": community.community_id, "title": community.title}, status=status.HTTP_201_CREATED
+    # Deserialize and validate the data
+    serializer = CommunitySerializer(data=request.data)
+    if not serializer.is_valid():
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Save the valid data as a new Community instance
+    community = serializer.save()
+    
+    # Handle the optional image upload
+    avatar_file = request.FILES.get('avatar')
+    if avatar_file:
+        # Get Supabase client
+        supabase = get_supabase_client()
+
+        # Create bucket if it does not exist
+        if not create_bucket_if_not_exists('community-avatars'):
+            return JsonResponse({'error': 'Could not ensure bucket exists.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Set the upload path in Supabase Storage
+        upload_path = f"{community.community_id}/avatar"
+
+        # Upload the image file to Supabase Storage
+        image_content = avatar_file.read()
+        response = supabase.storage.from_("community-avatars").upload(
+            file=image_content,
+            path=upload_path,
+            file_options={"content-type": avatar_file.content_type, "upsert": "true"}
         )
-    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not response.path:
+            # Store the image URL in the community's data
+            community.avatar_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/community-avatars/{upload_path}"
+            community.save()
+        else:
+            return JsonResponse({"error": "Failed to upload community avatar"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return JsonResponse(
+        {"community_id": community.community_id, "title": community.title},
+        status=status.HTTP_201_CREATED
+    )
 
 @api_view(["POST"])
 def approveCommunityRequest(request: HttpRequest) -> JsonResponse:
