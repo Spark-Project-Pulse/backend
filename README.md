@@ -239,7 +239,9 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
     (id, name, public)
    values
     ('profile-images', 'profile-images', true);
+   ```
 
+   ``` sql
    -- create community-avatars bucket
    insert into storage.buckets
     (id, name, public)
@@ -253,14 +255,16 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    ON storage.objects
    FOR ALL
    USING (bucket_id = 'profile-images');
+   ```
 
+   ``` sql
    -- enable uploading to the community-avatars bucklet
    CREATE POLICY "Allow all on community-avatars" 
    ON storage.objects
    FOR ALL
    USING (bucket_id = 'community-avatars');
-  ```
-1. After doing this, make sure to create a bucket under storage called "profile-images" and make sure to select "public"
+   ```
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
