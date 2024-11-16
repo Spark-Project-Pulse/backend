@@ -54,12 +54,12 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
         # Upload the image file to Supabase Storage
         image_content = avatar_file.read()
         response = supabase.storage.from_("community-avatars").upload(
-            file=image_content,
             path=upload_path,
+            file=image_content,
             file_options={"content-type": avatar_file.content_type, "upsert": "true"}
         )
 
-        if not response.path:
+        if response.path:
             # Store the image URL in the community's data
             community.avatar_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/community-avatars/{upload_path}"
             community.save()

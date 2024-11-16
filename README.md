@@ -228,23 +228,39 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    ```
 4. Run the following SQL commands in your SQL Editor on your local Supabase DB
 
-   ``` bash
+   ``` sql
    CREATE EXTENSION IF NOT EXISTS pg_trgm;
    CREATE EXTENSION IF NOT EXISTS unaccent;
    ```
 
-   ``` bash
+   ``` sql
+   -- create profile-images bucket
+   insert into storage.buckets
+    (id, name, public)
+   values
+    ('profile-images', 'profile-images', true);
+
+   -- create community-avatars bucket
+   insert into storage.buckets
+    (id, name, public)
+   values
+    ('community-avatars', 'community-avatars', true);
+   ```
+
+   ``` sql
+   -- enable uploading to the profile-images bucklet
    CREATE POLICY "Allow all on profile-images" 
    ON storage.objects
    FOR ALL
    USING (bucket_id = 'profile-images');
-   CREATE POLICY "Public all access to buckets"
-   ON storage.buckets
-   FOR ALL
-   USING (true);
-   ```
 
-5. After doing this, make sure to create a bucket under storage called "profile-images" and make sure to select "public"
+   -- enable uploading to the community-avatars bucklet
+   CREATE POLICY "Allow all on community-avatars" 
+   ON storage.objects
+   FOR ALL
+   USING (bucket_id = 'community-avatars');
+  ```
+1. After doing this, make sure to create a bucket under storage called "profile-images" and make sure to select "public"
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
