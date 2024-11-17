@@ -82,6 +82,42 @@ def markAsRead(request: HttpRequest, user_id: str, notification_id: str) -> Json
         )
 
 
+@api_view(["PATCH"])
+def markAsUnread(request: HttpRequest, user_id: str, notification_id: str) -> JsonResponse:
+    """
+    Retrieve all notifications from the database and serialize them
+    to JSON format.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+
+    Returns:
+        JsonResponse: Success/failure message with appropriate status code
+    """
+
+    try:
+        user_id = UUID(user_id) # TODO: we should really add middleware at some point and use a JWT to get access to the current user in the BACKEND
+        notification_id = UUID(notification_id)
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"error": "Invalid notification/user ID format"}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    success = NotificationService.mark_as_unread(user_id, notification_id)
+    
+    if success:
+        return JsonResponse(
+            {"message": "Notification marked as unread"}, 
+            status=status.HTTP_200_OK
+        )
+    else:
+        return JsonResponse(
+            {"error": "Notification not found or unauthorized"}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
 @api_view(["DELETE"])
 def deleteNotification(request: HttpRequest, user_id: str, notification_id: str) -> JsonResponse:
     """

@@ -134,6 +134,35 @@ class NotificationService:
 
 
     @classmethod
+    def mark_as_unread(cls, user_id: UUID, notification_id: UUID) -> bool:
+        """Handles marking a notification as unread for a given user.
+
+        Args:
+            user_id (UUID): id of recipient of notification
+            notification_id (UUID): id of notification being altered
+
+        Returns:
+            bool: True if operation successful, False otherwise
+        """
+        try:
+            # Get the notification and verify the recipient matches the user
+            notification = Notifications.objects.get(
+                notification_id=notification_id,
+                recipient_id=user_id
+            )
+            
+            # Mark as read and save
+            notification.read = False
+            notification.save()
+            
+            return True
+            
+        except Notifications.DoesNotExist:
+            # Either notification doesn't exist or user isn't authorized
+            return False
+
+
+    @classmethod
     def delete(cls, user_id: UUID, notification_id: UUID) -> bool:
         """Handles deleting a notification for a given user.
 
