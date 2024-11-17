@@ -30,9 +30,9 @@ def getNotificationsByUserId(request: HttpRequest, user_id: int) -> JsonResponse
 
 
 @api_view(["GET"])
-def getNotificationsCountByUserId(request: HttpRequest, user_id: int) -> JsonResponse:
+def getUnreadNotificationsCountByUserId(request: HttpRequest, user_id: int) -> JsonResponse:
     """
-    Retrieve number of notifications for a user.
+    Retrieve number of unread notifications for a user.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
@@ -41,7 +41,7 @@ def getNotificationsCountByUserId(request: HttpRequest, user_id: int) -> JsonRes
     Returns:
         JsonResponse: A response containing the number of Notifications for a user.
     """
-    count = Notifications.objects.filter(recipient_id=user_id).count()
+    count = Notifications.objects.filter(recipient_id=user_id, read=False).count()
     return JsonResponse({"count": count}, safe=False, status=status.HTTP_200_OK)
 
 

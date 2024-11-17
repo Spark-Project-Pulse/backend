@@ -3,7 +3,7 @@ from ..views import notification_views
 
 urlpatterns = [
     path('getByUserId/<str:user_id>/', notification_views.getNotificationsByUserId, name='getNotificationsByUserId'),
-    path('getCountByUserId/<str:user_id>/', notification_views.getNotificationsCountByUserId, name='getNotificationsCountByUserId'),
+    path('getUnreadCountByUserId/<str:user_id>/', notification_views.getUnreadNotificationsCountByUserId, name='getUnreadNotificationsCountByUserId'),
 
     path('markAsRead/<str:user_id>/<str:notification_id>', notification_views.markAsRead, name='markAsReadByUserId'),
     path('markAsUnread/<str:user_id>/<str:notification_id>', notification_views.markAsUnread, name='markAsUnreadByUserId'),
