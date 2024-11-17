@@ -127,6 +127,7 @@ class UserBadgeSerializer(serializers.ModelSerializer):
 
 
 class UserBadgeProgressSerializer(serializers.ModelSerializer):
+    badge_info = BadgeSerializer(source='badge', read_only=True)
     class Meta:
         model = UserBadgeProgress
         fields = '__all__'
