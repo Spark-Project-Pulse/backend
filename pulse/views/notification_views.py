@@ -30,20 +30,19 @@ def getNotificationsByUserId(request: HttpRequest, user_id: int) -> JsonResponse
 
 
 @api_view(["GET"])
-def getAllNotifications(request: HttpRequest) -> JsonResponse:
+def getNotificationsCountByUserId(request: HttpRequest, user_id: int) -> JsonResponse:
     """
-    Retrieve all notifications from the database and serialize them
-    to JSON format.
+    Retrieve number of notifications for a user.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
+        user_id (int): The ID of the user whose Notifications are to be retrieved.
 
     Returns:
-        Json
+        JsonResponse: A response containing the number of Notifications for a user.
     """
-    tags = Notifications.objects.all()
-    serializer = NotificationSerializer(tags, many=True)
-    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+    count = Notifications.objects.filter(recipient_id=user_id).count()
+    return JsonResponse({"count": count}, safe=False, status=status.HTTP_200_OK)
 
 
 @api_view(["PATCH"])
