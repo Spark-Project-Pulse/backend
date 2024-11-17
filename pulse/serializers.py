@@ -110,3 +110,24 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notifications
         fields = '__all__'
+
+
+class BadgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Badge
+        fields = '__all__'
+
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    badge_info = BadgeSerializer(source='badge', read_only=True)
+
+    class Meta:
+        model = UserBadge
+        fields = '__all__'
+
+
+class UserBadgeProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserBadgeProgress
+        fields = '__all__'
+
