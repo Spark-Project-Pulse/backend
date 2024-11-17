@@ -102,6 +102,7 @@ class Badge(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = "Badges"
         constraints = [
             models.CheckConstraint(
                 check=models.Q(associated_tag__isnull=True) | models.Q(is_global=False),
@@ -224,6 +225,7 @@ class UserBadgeProgress(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
+        db_table = "UserBadgeProgress"  
         unique_together = ("user", "badge")
 
 
@@ -233,6 +235,7 @@ class UserBadge(models.Model):
     earned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = "UserBadges" 
         unique_together = ("user", "badge")
 
 class Comments(models.Model):
