@@ -100,6 +100,11 @@ class Badge(models.Model):
     )
     is_global = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    image_url = models.URLField(
+        null=True,
+        blank=True,
+        default='https://cdn-icons-png.flaticon.com/512/20/20100.png'
+    )
 
     class Meta:
         db_table = "Badges"
