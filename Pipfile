@@ -18,7 +18,7 @@ psycopg2-binary = "*"
 djangorestframework = "*"
 google-cloud-secret-manager = "*"
 transformers = "*"
-torch = { version = "*", index = "pytorch-cpu" }
+torch = { version = "==2.5.0+cpu", index = "pytorch-cpu" }
 strenum = "*"
 
 [dev-packages]

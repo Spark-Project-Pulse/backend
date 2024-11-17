@@ -1,6 +1,8 @@
 from django.conf import settings
 from supabase import create_client, Client
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoModelForImageClassification, ViTImageProcessor
+from PIL import Image
+from io import BytesIO
 import torch
 
 def get_supabase_client() -> Client:
@@ -13,11 +15,15 @@ device = torch.device("cpu")
                       
 # Load toxicity model
 # Load tokenizer and model
-model_name = "unitary/toxic-bert"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
+text_model_name = "unitary/toxic-bert"
+tokenizer = AutoTokenizer.from_pretrained(text_model_name)
+model = AutoModelForSequenceClassification.from_pretrained(text_model_name)
 model.to(device)
+
+# Load image toxicity model
+img_model_name = "Falconsai/nsfw_image_detection"
+processor = ViTImageProcessor.from_pretrained(img_model_name)
+model_img = AutoModelForImageClassification.from_pretrained(img_model_name)
 
 def check_content(text, threshold=0.003):
   """
@@ -45,6 +51,32 @@ def check_content(text, threshold=0.003):
 
   # Return True if the toxicity score exceeds the threshold
   return toxicity_score <= threshold
+
+def check_img_content(img_content, threshold=0.5):
+  """
+    Checks if the provided text contains NSFW content.
+
+  Args:
+    img_content (bytes): The image in bytes to check for NSFW
+    threshold (float): Minimum confidence level for detecting NSFW
+
+  Returns:
+    bool: True if NSFW is detected, otherwise False.
+  """
+
+  img = Image.open(BytesIO(img_content))
+  img = img.convert("RGB")  # Ensure image is in RGB format
+
+  with torch.no_grad():
+    inputs = processor(images=img, return_tensors="pt")
+    outputs = model_img(**inputs)
+
+  logits = outputs.logits
+  probabilities = torch.softmax(logits, dim=1)
+
+  # Return True if NSFW score exceeds threshold
+  return probabilities[0][1] > threshold
+
 
 def create_bucket_if_not_exists(bucket_name):
   """
