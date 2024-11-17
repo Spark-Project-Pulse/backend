@@ -75,6 +75,8 @@ def check_img_content(img_content, threshold=0.5):
   probabilities = torch.softmax(logits, dim=1)
 
   # Return True if NSFW score exceeds threshold
+  for label, prob in zip(model_img.config.id2label.values(), probabilities[0].tolist()):
+    print(f"{label}: {prob:.4f}")
   return probabilities[0][1] > threshold
 
 
