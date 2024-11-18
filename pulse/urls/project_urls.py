@@ -8,4 +8,5 @@ urlpatterns = [
     path('getAll/', project_views.getAllProjects, name='getAllProjects'),
     path('getByUserId/<str:user_id>/', project_views.getProjectsByUserId, name='getProjectsByUserId'),
     path('getById/<str:project_id>/', project_views.getProjectById, name='getProjectById'),
+    path('codeReview/', project_views.codeReview, name='codeReview'),
 ]
