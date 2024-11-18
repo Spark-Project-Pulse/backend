@@ -60,7 +60,6 @@ def codeReview(request: HttpRequest) -> JsonResponse:
 
         # Call the AI model for code review
         suggestions = generate_code_review(project_title, project_description, file_name, file_content)
-        print(suggestions)
 
         # Return suggestions
         if suggestions:
