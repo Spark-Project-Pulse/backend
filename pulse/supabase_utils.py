@@ -1,6 +1,7 @@
 from django.conf import settings
 from supabase import create_client, Client
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoModelForImageClassification, ViTImageProcessor
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoProcessor, FocalNetForImageClassification
+from torchvision import transforms
 from PIL import Image
 from io import BytesIO
 import torch
@@ -21,9 +22,24 @@ model = AutoModelForSequenceClassification.from_pretrained(text_model_name)
 model.to(device)
 
 # Load image toxicity model
-img_model_name = "Falconsai/nsfw_image_detection"
-processor = ViTImageProcessor.from_pretrained(img_model_name)
-model_img = AutoModelForImageClassification.from_pretrained(img_model_name)
+img_model_name = "MichalMlodawski/nsfw-image-detection-large"
+processor = AutoProcessor.from_pretrained(img_model_name)
+model_img = FocalNetForImageClassification.from_pretrained(img_model_name)
+model_img.eval()
+
+# Image transformations
+transform = transforms.Compose([
+    transforms.Resize((512, 512)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+# Mapping from model labels to NSFW categories
+label_to_category = {
+    "LABEL_0": "Safe",
+    "LABEL_1": "Questionable",
+    "LABEL_2": "Unsafe"
+}
 
 def check_content(text, threshold=0.003):
   """
@@ -52,7 +68,7 @@ def check_content(text, threshold=0.003):
   # Return True if the toxicity score exceeds the threshold
   return toxicity_score <= threshold
 
-def check_img_content(img_content, threshold=0.5):
+def check_img_content(img_content):
   """
     Checks if the provided text contains NSFW content.
 
@@ -64,20 +80,28 @@ def check_img_content(img_content, threshold=0.5):
     bool: True if NSFW is detected, otherwise False.
   """
 
-  img = Image.open(BytesIO(img_content))
-  img = img.convert("RGB")  # Ensure image is in RGB format
+  # Load the image from bytes
+  img = Image.open(BytesIO(img_content)).convert("RGB")
 
+  # Apply transformations
+  image_tensor = transform(img).unsqueeze(0)
+
+  # Process image using processor
+  inputs = processor(images=img, return_tensors="pt")
+
+  # Get predictions from the model
   with torch.no_grad():
-    inputs = processor(images=img, return_tensors="pt")
-    outputs = model_img(**inputs)
+      outputs = model_img(**inputs)
+      probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
+      confidence, predicted = torch.max(probabilities, 1)
 
-  logits = outputs.logits
-  probabilities = torch.softmax(logits, dim=1)
+  # Get label and category
+  label = model_img.config.id2label[predicted.item()]
+  nsfw_detected = label in ["QUESTIONABLE", "UNSAFE"]
 
-  # Return True if NSFW score exceeds threshold
-  for label, prob in zip(model_img.config.id2label.values(), probabilities[0].tolist()):
-    print(f"{label}: {prob:.4f}")
-  return probabilities[0][1] > threshold
+  # print(f"Predicted Label: {label} | Confidence: {confidence.item()*100}%")
+  return nsfw_detected
+
 
 
 def create_bucket_if_not_exists(bucket_name):
