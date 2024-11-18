@@ -56,45 +56,61 @@ def getUserBadgeProgress(request: HttpRequest, user_id: str) -> JsonResponse:
 
 def updateProgressAndAwardBadges(user):
     """
-    Updates the badge progress for the user and awards badges if progress meets or exceeds the target.
+    Updates the progress for badges and awards badges if criteria are met.
     """
-    from django.db.models import Sum
+    try:
+        from django.db.models import Sum
 
-    # Get all available badges
-    badges = Badge.objects.all()
+        # Fetch all badges
+        badges = Badge.objects.all()
 
-    for badge in badges:
-        if badge.is_global:
-            # Update global badge progress
-            progress, created = UserBadgeProgress.objects.get_or_create(
-                user=user, badge=badge,
-                defaults={"progress_value": 0, "progress_target": badge.reputation_threshold}
-            )
-            progress.progress_value = user.reputation
-            progress.save()
-
-            # Award badge if the progress meets or exceeds the target
-            if progress.progress_value >= progress.progress_target:
-                UserBadge.objects.get_or_create(user=user, badge=badge)
-
-        else:
-            # Calculate tag-specific reputation progress
-            tag_reputation = (
-                Answers.objects.filter(
-                    expert=user,
-                    question__tags__id=badge.associated_tag_id
+        for badge in badges:
+            if badge.is_global:
+                # Update global badge progress
+                progress, created = UserBadgeProgress.objects.get_or_create(
+                    user=user,
+                    badge=badge,
+                    defaults={
+                        'progress_value': user.reputation,
+                        'progress_target': badge.reputation_threshold,
+                    }
                 )
-                .aggregate(total_score=Sum("score"))
-                .get("total_score", 0)
-            )
+                if not created:
+                    progress.progress_value = user.reputation
+                    progress.save()
 
-            progress, created = UserBadgeProgress.objects.get_or_create(
-                user=user, badge=badge,
-                defaults={"progress_value": 0, "progress_target": badge.reputation_threshold}
-            )
-            progress.progress_value = tag_reputation or 0
-            progress.save()
+                # Check if the badge should be awarded
+                if user.reputation >= badge.reputation_threshold:
+                    UserBadge.objects.get_or_create(user=user, badge=badge)
+            else:
+                # Calculate tag-specific reputation
+                tag_reputation = (
+                    Answers.objects.filter(
+                        expert=user,
+                        question__tags=badge.associated_tag
+                    )
+                    .aggregate(total_score=Sum("score"))
+                    .get("total_score", 0)
+                )
+                progress, created = UserBadgeProgress.objects.get_or_create(
+                    user=user,
+                    badge=badge,
+                    defaults={
+                        'progress_value': tag_reputation,
+                        'progress_target': badge.reputation_threshold,
+                    }
+                )
+                if not created:
+                    progress.progress_value = tag_reputation
+                    progress.save()
 
-            # Award badge if the progress meets or exceeds the target
-            if progress.progress_value >= progress.progress_target:
-                UserBadge.objects.get_or_create(user=user, badge=badge)
+                # Check if the badge should be awarded
+                if tag_reputation >= badge.reputation_threshold:
+                    UserBadge.objects.get_or_create(user=user, badge=badge)
+
+    except Exception as e:
+        # Log the exception for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in updateProgressAndAwardBadges for user {user.user}: {e}")
+        raise

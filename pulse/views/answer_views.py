@@ -5,7 +5,7 @@ from django.views.decorators.http import require_http_methods
 from rest_framework import status
 from ..supabase_utils import check_content
 from ..models import Answers, CommunityMembers, Votes, Users
-from ..views import badge_views
+# from ..views import badge_views
 from ..serializers import AnswerSerializer
 from services.notification_service import NotificationService
 
@@ -70,7 +70,6 @@ def upvoteAnswer(request: HttpRequest) -> JsonResponse:
         answer.score -= 1
         answer.save()
         adjust_community_reputation(answer, question, -1)
-        badge_views.updateProgressAndAwardBadges(user)
         return JsonResponse({"message": "Upvote removed", "new_score": answer.score}, status=status.HTTP_200_OK)
     
     if existing_vote and existing_vote.vote_type == 'downvote':
@@ -79,7 +78,6 @@ def upvoteAnswer(request: HttpRequest) -> JsonResponse:
         answer.score += 2
         answer.save()
         adjust_community_reputation(answer, question, 2)
-        badge_views.updateProgressAndAwardBadges(user)
         return JsonResponse({"message": "Vote switched to upvote", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     # Record a new upvote
@@ -87,7 +85,7 @@ def upvoteAnswer(request: HttpRequest) -> JsonResponse:
     answer.score += 1
     answer.save()
     adjust_community_reputation(answer, question, 1)
-    badge_views.updateProgressAndAwardBadges(user)
+
 
     return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
@@ -109,7 +107,6 @@ def downvoteAnswer(request: HttpRequest) -> JsonResponse:
         answer.score += 1
         answer.save()
         adjust_community_reputation(answer, question, 1)
-        badge_views.updateProgressAndAwardBadges(user)
         return JsonResponse({"message": "Downvote removed", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     if existing_vote and existing_vote.vote_type == 'upvote':
@@ -118,7 +115,6 @@ def downvoteAnswer(request: HttpRequest) -> JsonResponse:
         answer.score -= 2
         answer.save()
         adjust_community_reputation(answer, question, -2)
-        badge_views.updateProgressAndAwardBadges(user)
         return JsonResponse({"message": "Vote switched to downvote", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     # Record a new downvote
@@ -126,7 +122,6 @@ def downvoteAnswer(request: HttpRequest) -> JsonResponse:
     answer.score -= 1
     answer.save()
     adjust_community_reputation(answer, question, -1)
-    badge_views.updateProgressAndAwardBadges(user)
     return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
 '''----- GET REQUESTS -----'''
