@@ -19,7 +19,7 @@ def generate_code_review(project_title, project_description, file_name, file_con
     
     # Construct the message for the AI model, requesting code review suggestions
     message_content = f'''
-    You are a programming expert. Review the provided code file and suggest 5 to 8 concise improvements in JSON format. The suggestions should include:
+    You are a programming expert. Review the provided code file and suggest 2 to 5 concise improvements in JSON format. The suggestions should include:
     - The current issue or limitation in a single sentence.
     - Why this issue matters in a single sentence.
     - A suggested fix in a single sentence.
