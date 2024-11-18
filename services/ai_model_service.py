@@ -28,12 +28,13 @@ def generate_code_review(project_title, project_description, file_name, file_con
     It is crucial to use the correct line numbers as specified in the file content. Do not infer or estimate line numbers—use the line numbers explicitly provided at the beginning of each line.
     
     Keep the suggestions brief and focused, ideally less than 50 words each. Minimize using special characters that may interfere with JSON parsing.
-    Limit the total response to 1000 tokens, and prioritize critical improvements.
+    Limit the total response to 500 tokens, and prioritize critical improvements.
 
     The project is called {project_title} with a description of: "{project_description}"
     The file is named {file_name} with the following content:
     {numbered_content}
     END OF FILE
+    Remember, limit the response to 500 tokens and gracefully close the JSON structure if you are close to the token limit.
     '''
     
     # Define JSON Schema for response validation
@@ -63,7 +64,7 @@ def generate_code_review(project_title, project_description, file_name, file_con
     stream = client.chat.completions.create(
         model="meta-llama/Meta-Llama-3-8B-Instruct",  # Use the desired model
         messages=messages,  # Pass the message to the model
-        max_tokens=4000,  # Increase max tokens for longer responses, should limit to 1000 in the response but set to 3000 just in case
+        max_tokens=4000,  # Increase max tokens for longer responses, should limit to 500 in the response but set to 4000 just in case
         stream=True,  # Stream the response to avoid timeout
         temperature=0.4,  # Lower temperature for deterministic results
         response_format=response_format,  # Enforce JSON Schema validation
