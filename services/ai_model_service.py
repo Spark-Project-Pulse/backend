@@ -71,7 +71,7 @@ def generate_code_review(project_title, project_description, file_name, file_con
     # Process the streaming response
     response_text = ""
     for chunk in stream:
-        print(response_text)
+        # print(response_text)
         response_text += chunk.choices[0].delta.content
 
     # Attempt to parse the response as JSON
