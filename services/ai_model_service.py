@@ -19,7 +19,7 @@ def generate_code_review(project_title, project_description, file_name, file_con
     
     # Construct the message for the AI model, requesting code review suggestions
     message_content = f'''
-    You are a programming expert that must respond strictly in JSON format. Do a concise code review on the following file and provide at least 5 meaningful suggestions or improvements. Each suggestion should include:
+    You are a programming expert. Review the provided code file and suggest 5 to 8 concise improvements in JSON format. The suggestions should include:
     - The current issue or limitation in a single sentence.
     - Why this issue matters in a single sentence.
     - A suggested fix in a single sentence.
@@ -28,13 +28,11 @@ def generate_code_review(project_title, project_description, file_name, file_con
     It is crucial to use the correct line numbers as specified in the file content. Do not infer or estimate line numbers—use the line numbers explicitly provided at the beginning of each line.
     
     Keep the suggestions brief and focused, ideally less than 50 words each. Minimize using special characters that may interfere with JSON parsing.
-    Limit the total response to 500 tokens, and prioritize critical improvements.
 
     The project is called {project_title} with a description of: "{project_description}"
     The file is named {file_name} with the following content:
     {numbered_content}
     END OF FILE
-    Remember, limit the response to 500 tokens and gracefully close the JSON structure if you are close to the token limit.
     '''
     
     # Define JSON Schema for response validation
@@ -73,6 +71,7 @@ def generate_code_review(project_title, project_description, file_name, file_con
     # Process the streaming response
     response_text = ""
     for chunk in stream:
+        print(response_text)
         response_text += chunk.choices[0].delta.content
 
     # Attempt to parse the response as JSON
