@@ -5,7 +5,7 @@ name: Deploy Backend to Google Cloud Run
 on:
   push:
     branches:
-      - main
+      - hotfix/will/pls-god-fix-hosts
 
 jobs:
   deploy:
