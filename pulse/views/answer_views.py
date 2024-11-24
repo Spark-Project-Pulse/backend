@@ -5,7 +5,6 @@ from django.views.decorators.http import require_http_methods
 from rest_framework import status
 from ..supabase_utils import check_content
 from ..models import Answers, CommunityMembers, Votes, Users
-# from ..views import badge_views
 from ..serializers import AnswerSerializer
 from services.notification_service import NotificationService
 
