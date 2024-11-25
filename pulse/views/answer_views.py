@@ -128,41 +128,11 @@ def getAnswersByQuestionId(request: HttpRequest, question_id: str) -> JsonRespon
     # Retrieve all answers for the given question_id
     answers = Answers.objects.filter(question=question_id)
     
-    # Serialize the list of answers, setting many=True to indicate multiple objects
+    # Serialize the answers, the serializer will include expert_badges
     serialized_answers = AnswerSerializer(answers, many=True).data
-    
-    # Use zip to iterate over both serialized answers and answer objects
-    for serialized_answer, answer_obj in zip(serialized_answers, answers):
-        # Get the expert user for this answer
-        expert_id = serialized_answer.get('expert')
-        if expert_id:
-            user = Users.objects.filter(user_id=expert_id).first()
-            if user:
-                # Get the tags associated with the question for this specific answer
-                question_tags = answer_obj.question.tags.all()
-                
-                # Get the relevant badges associated with those tags
-                relevant_badges = user.userbadge_set.filter(
-                    badge__associated_tag__in=question_tags
-                ).values(
-                    'badge__badge_id',
-                    'badge__name',
-                    'badge__description',
-                    'badge__image_url'
-                )
-
-                # Add the relevant badges to the answer
-                serialized_answer['expert_badges'] = [
-                    {
-                        'badge_id': badge['badge__badge_id'],
-                        'name': badge['badge__name'],
-                        'description': badge['badge__description'],
-                        'image_url': badge['badge__image_url']
-                    }
-                    for badge in relevant_badges
-                ]
 
     return JsonResponse(serialized_answers, safe=False, status=status.HTTP_200_OK)
+
 
 
 
@@ -171,7 +141,7 @@ def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_
     # Retrieve all answers for the given question_id
     answers = Answers.objects.filter(question=question_id)
     
-    # Serialize the list of answers, setting many=True to indicate multiple objects
+    # Serialize the list of answers
     serialized_answers = AnswerSerializer(answers, many=True).data
     
     for answer in serialized_answers:
@@ -182,34 +152,8 @@ def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_
         answer['curr_user_upvoted'] = user_vote.vote_type == 'upvote' if user_vote else False
         answer['curr_user_downvoted'] = user_vote.vote_type == 'downvote' if user_vote else False
 
-        expert_id = answer.get('expert')
-        if expert_id:
-            user = Users.objects.filter(user_id=expert_id).first()
-            if user:
-                # Filter badges based on tags associated with the question
-                question_tags = answers.first().question.tags.all()
-                relevant_badges = user.userbadge_set.filter(
-                    badge__associated_tag__in=question_tags
-                ).values(
-                    'badge__badge_id',
-                    'badge__name',
-                    'badge__description',
-                    'badge__image_url'
-                )
-
-                # Transform field names to match the frontend expectation
-                answer['expert_badges'] = [
-                    {
-                        'badge_id': badge['badge__badge_id'],
-                        'name': badge['badge__name'],
-                        'description': badge['badge__description'],
-                        'image_url': badge['badge__image_url']
-                    }
-                    for badge in relevant_badges
-                ]
-
-
     return JsonResponse(serialized_answers, safe=False, status=status.HTTP_200_OK)
+
 
 '''----- HELPER FUNCTIONS -----'''
 

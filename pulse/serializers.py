@@ -32,6 +32,44 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answers
         fields = '__all__'  # or specify the fields you want
+
+    from rest_framework import serializers
+from .models import *
+from django.db.models import F
+
+class AnswerSerializer(serializers.ModelSerializer):
+    # Include expert info
+    expert_info = UserSerializer(source='expert', read_only=True)
+    # Add expert_badges field
+    expert_badges = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Answers
+        fields = '__all__'  # Ensure 'expert_badges' is included if you're specifying fields explicitly
+
+    def get_expert_badges(self, obj):
+        # Get the expert user
+        user = obj.expert
+        if user:
+            # Get the tags associated with the question
+            question_tags = obj.question.tags.all()
+            # Get the relevant badges associated with those tags
+            relevant_badges = user.userbadge_set.filter(
+                badge__associated_tag__in=question_tags
+            ).select_related('badge')
+            # Serialize the badges
+            badges = []
+            for user_badge in relevant_badges:
+                badge = user_badge.badge
+                badges.append({
+                    'badge_id': badge.badge_id,
+                    'name': badge.name,
+                    'description': badge.description,
+                    'image_url': badge.image_url
+                })
+            return badges
+        return []
+
         
 class CommentSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the commenter as a dictionary, based on the expert_id (for GET requests)
