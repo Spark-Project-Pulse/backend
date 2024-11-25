@@ -20,6 +20,7 @@ google-cloud-secret-manager = "*"
 transformers = "*"
 torch = { version = "==2.5.0", index = "pytorch-cpu" }
 strenum = "*"
+huggingface-hub = "*"
 pillow = "*"
 
 [dev-packages]
