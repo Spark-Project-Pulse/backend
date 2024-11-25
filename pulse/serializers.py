@@ -114,7 +114,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 class BadgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Badge
-        fields = '__all__'
+        fields = ['badge_id', 'name', 'description', 'image_url']
 
 
 class UserBadgeSerializer(serializers.ModelSerializer):
