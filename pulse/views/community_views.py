@@ -12,7 +12,7 @@ from django.db.models import Count, Q
 from uuid import UUID
 from services.notification_service import NotificationService
 from rest_framework.parsers import MultiPartParser
-from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists, check_content, check_img_content
 
 '''POST Requests'''
 
@@ -34,6 +34,12 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     serializer = CommunitySerializer(data=request.data)
     if not serializer.is_valid():
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # Text Content moderation
+    title = request.data['title']
+    description = request.data['description']
+    if check_content(title) or check_content(description):
+        return JsonResponse({ "community_id": "null", "title": title, "toxic": True, "avatar_image_nsfw": False}, status=status.HTTP_200_OK)
     
     # Save the valid data as a new Community instance
     community = serializer.save()
@@ -41,6 +47,10 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     # Handle the optional image upload
     avatar_file = request.FILES.get('avatar')
     if avatar_file:
+        # Image Content moderation
+        image_content = avatar_file.read()
+        if check_img_content(image_content):
+            return JsonResponse({ "community_id": "null", "title": title, "toxic": False, "avatar_image_nsfw": True}, status=status.HTTP_200_OK)
         # Get Supabase client
         supabase = get_supabase_client()
 
@@ -52,7 +62,6 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
         upload_path = f"{community.community_id}/avatar"
 
         # Upload the image file to Supabase Storage
-        image_content = avatar_file.read()
         response = supabase.storage.from_("community-avatars").upload(
             path=upload_path,
             file=image_content,
@@ -67,7 +76,7 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
             return JsonResponse({"error": "Failed to upload community avatar"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return JsonResponse(
-        {"community_id": community.community_id, "title": community.title},
+        {"community_id": community.community_id, "title": community.title, "toxic": False, "avatar_image_nsfw": False},
         status=status.HTTP_201_CREATED
     )
 

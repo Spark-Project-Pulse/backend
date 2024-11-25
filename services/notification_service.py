@@ -46,6 +46,10 @@ class NotificationService:
             actor_id: ID of the user who triggered the notification (optional)
             message: Custom message (optional, will use default if not provided)
         """
+        if not recipient_id:
+            # gracefully return if no recipient
+            return
+        
         if notification_type not in dict(Notifications.NOTIFICATION_TYPES):
             raise ValueError(f"Invalid notification type: {notification_type}")
 

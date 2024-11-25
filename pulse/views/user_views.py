@@ -4,7 +4,7 @@ from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from rest_framework import status
-from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists, check_img_content
 from ..models import Users, UserRoles
 from ..serializers import UserSerializer, UserRolesSerializer
 
@@ -159,6 +159,10 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
     if not image_file:
         return JsonResponse({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
     image_content = image_file.read()
+
+    # Image Content moderation
+    if check_img_content(image_content):
+        return JsonResponse({"profile_image_nsfw": True}, status=status.HTTP_200_OK)
 
     # Create bucket if it does not exist
     if not create_bucket_if_not_exists('profile-images'):
