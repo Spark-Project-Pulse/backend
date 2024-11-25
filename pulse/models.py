@@ -86,6 +86,35 @@ class Communities(models.Model):
                 [combined_text, str(self.community_id)]
             )
 
+class Badge(models.Model):
+    badge_id = models.AutoField(primary_key=True)
+    name = models.TextField()
+    description = models.TextField()
+    reputation_threshold = models.IntegerField(null=True, blank=True)
+    associated_tag = models.ForeignKey(
+        "Tags",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="badges"
+    )
+    is_global = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    image_url = models.URLField(
+        null=True,
+        blank=True,
+        default='https://cdn-icons-png.flaticon.com/512/20/20100.png'
+    )
+
+    class Meta:
+        db_table = "Badges"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(associated_tag__isnull=True) | models.Q(is_global=False),
+                name="mutual_exclusivity_check"
+            )
+        ]
+
 class Projects(models.Model):
     project_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)
@@ -192,6 +221,27 @@ class UserRoles(models.Model):
 
     class Meta:
         db_table = 'UserRoles'
+
+class UserBadgeProgress(models.Model):
+    user = models.ForeignKey("Users", on_delete=models.CASCADE)
+    badge = models.ForeignKey("Badge", on_delete=models.CASCADE)
+    progress_value = models.BigIntegerField(default=0)
+    progress_target = models.BigIntegerField()
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "UserBadgeProgress"  
+        unique_together = ("user", "badge")
+
+
+class UserBadge(models.Model):
+    user = models.ForeignKey("Users", on_delete=models.CASCADE)
+    badge = models.ForeignKey("Badge", on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "UserBadges" 
+        unique_together = ("user", "badge")        
 
 class Comments(models.Model):
     comment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
