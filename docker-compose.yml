@@ -11,14 +11,14 @@ services:
       - DOCKER_LOCAL=true
   frontend:
     build:
-      context: ../frontend
+      context: ../codehive-frontend
       dockerfile: Dockerfile
       args:
         ENV_FILE: ".env.development"
     ports:
       - "3000:3000"
     env_file:
-      - ../frontend/.env.local
+      - ../codehive-frontend/.env.local
     environment:
       - DOCKER_LOCAL=true
     profiles:
