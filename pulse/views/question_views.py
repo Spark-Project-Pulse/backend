@@ -257,3 +257,30 @@ def searchQuestions(request):
         'totalPages': paginator.num_pages,
         'currentPage': page_number,
     }, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+def changeMark(request: HttpRequest, question_id: str) -> JsonResponse:
+    """
+    Mark a question as answered or unanswered, depending on current state
+
+    Args:
+        request (HttpRequest): The incoming HTTP request containing the data.
+
+    Returns:
+        JsonResponse: A response with the question id if successful,
+        or validation errors if the data is invalid.
+    """
+    question = get_object_or_404(
+        Questions, question_id=question_id
+    )  # Get the question or return 404
+    # Toggle the `is_answered` field
+    question.is_answered = not question.is_answered
+
+    # Use the serializer to validate and save the changes
+    serializer = QuestionSerializer(question, data={"is_answered": question.is_answered}, partial=True)
+    if serializer.is_valid():
+        serializer.save()  # Save the updated question
+        return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
+    # Return validation errors if any
+    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

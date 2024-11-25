@@ -112,6 +112,7 @@ class Questions(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField('Tags', related_name='questions', blank=True)
+    is_answered = models.BooleanField()
 
     search_vector = SearchVectorField(null=True, blank=True)
 

@@ -9,4 +9,5 @@ urlpatterns = [
     path('getByUserId/<str:user_id>/', question_views.getQuestionsByUserId, name='getQuestionsByUserId'),
     path('getById/<str:question_id>/', question_views.getQuestionById, name='getQuestionById'),
     path('search/', question_views.searchQuestions, name='search_questions'),
+    path('changeMark/<str:question_id>/', question_views.changeMark, name='changeMark'),
 ]
