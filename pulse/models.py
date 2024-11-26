@@ -90,7 +90,6 @@ class Badge(models.Model):
     badge_id = models.AutoField(primary_key=True)
     name = models.TextField()
     description = models.TextField()
-    reputation_threshold = models.IntegerField(null=True, blank=True)
     associated_tag = models.ForeignKey(
         "Tags",
         null=True,
@@ -238,11 +237,26 @@ class UserBadgeProgress(models.Model):
 class UserBadge(models.Model):
     user = models.ForeignKey("Users", on_delete=models.CASCADE)
     badge = models.ForeignKey("Badge", on_delete=models.CASCADE)
+    badge_tier = models.ForeignKey("BadgeTier", on_delete=models.CASCADE, null=True, blank=True)
     earned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "UserBadges" 
-        unique_together = ("user", "badge")        
+        db_table = "UserBadges"
+        unique_together = ("user", "badge")  # Ensures one badge per user
+    
+class BadgeTier(models.Model):
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='tiers')
+    tier_level = models.PositiveIntegerField()  # e.g., 1 for Tier I, 2 for Tier II
+    name = models.CharField(max_length=255)     # e.g., 'Python Pro I', 'Python Pro II'
+    description = models.TextField()
+    image_url = models.URLField()
+    reputation_threshold = models.PositiveIntegerField()  # Reputation required for this tier
+
+    class Meta:
+        db_table = 'BadgeTier'
+        unique_together = ('badge', 'tier_level')  # Ensure unique tiers per badge
+        ordering = ['badge', 'tier_level']
+
 
 class Comments(models.Model):
     comment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
