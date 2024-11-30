@@ -22,10 +22,10 @@ model = AutoModelForSequenceClassification.from_pretrained(text_model_name)
 model.to(device)
 
 # Load image toxicity model
-img_model_name = "MichalMlodawski/nsfw-image-detection-large"
-processor = AutoProcessor.from_pretrained(img_model_name)
-model_img = FocalNetForImageClassification.from_pretrained(img_model_name)
-model_img.eval()
+# img_model_name = "MichalMlodawski/nsfw-image-detection-large"
+# processor = AutoProcessor.from_pretrained(img_model_name)
+# model_img = FocalNetForImageClassification.from_pretrained(img_model_name)
+# model_img.eval()
 
 # Image transformations
 transform = transforms.Compose([
