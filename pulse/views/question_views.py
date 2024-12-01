@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
 from rest_framework import status
 from services.ai_model_service import check_content
-from ..models import Questions
+from pulse.models import Questions
 from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.decorators import throttle_classes
@@ -283,3 +283,71 @@ def changeMark(request: HttpRequest, question_id: str) -> JsonResponse:
 
     # Return validation errors if any
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["PUT"])
+def updateQuestion(request: HttpRequest, question_id: str) -> JsonResponse:
+    """
+    Update an existing question.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request containing the data.
+        question_id (str): The ID of the question to update.
+
+    Returns:
+        JsonResponse: A response with the updated question's ID if successful,
+        or validation errors if the data is invalid.
+    """
+    # Fetch the question from the database
+    question = get_object_or_404(Questions, question_id=question_id)
+
+    # Check if the asker in the request matches the question's asker
+    if request.data.get("asker") != str(question.asker_id):
+        return JsonResponse(
+            {"error": "You are not authorized to update this question."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Check for content moderation (toxic content)
+    title_text = request.data.get("title", "")
+    description_text = request.data.get("description", "")
+    if check_content(title_text) or check_content(description_text):
+        return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
+
+    # Update the question using the serializer
+    serializer = QuestionSerializer(instance=question, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return JsonResponse(
+            {"question_id": question.question_id}, status=status.HTTP_200_OK
+        )
+
+    # Return validation errors
+    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["DELETE"])
+def deleteQuestion(request: HttpRequest, question_id: str) -> JsonResponse:
+    """
+    Delete a question by its ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        question_id (str): The ID of the question to delete.
+
+    Returns:
+        JsonResponse: A response indicating success or failure.
+    """
+    # Fetch the question from the database
+    question = get_object_or_404(Questions, question_id=question_id)
+    
+    # Check if the asker in the request matches the question's asker
+    if request.data.get("asker") != str(question.asker_id):
+        return JsonResponse(
+            {"error": "You are not authorized to update this question."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+        
+    # Delete the question
+    question.delete()
+    return JsonResponse(
+        {"message": "Question deleted successfully"}, status=status.HTTP_200_OK
+    )
