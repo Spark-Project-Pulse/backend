@@ -10,4 +10,5 @@ urlpatterns = [
     path('getById/<str:question_id>/', question_views.getQuestionById, name='getQuestionById'),
     path('search/', question_views.searchQuestions, name='search_questions'),
     path('changeMark/<str:question_id>/', question_views.changeMark, name='changeMark'),
+    path('update/<str:question_id>/', question_views.updateQuestion, name='updateQuestion'),
 ]
