@@ -40,7 +40,7 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     title = request.data['title']
     description = request.data['description']
     if check_content(title) or check_content(description):
-        return JsonResponse({ "community_id": "null", "title": title, "toxic": True, "avatar_image_nsfw": False}, status=status.HTTP_200_OK)
+        return JsonResponse({"error": "Toxic content detected in your community."}, status=status.HTTP_200_OK)
     
     # Save the valid data as a new Community instance
     community = serializer.save()
@@ -51,7 +51,7 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
         # Image Content moderation
         image_content = avatar_file.read()
         if check_img_content(image_content):
-            return JsonResponse({ "community_id": "null", "title": title, "toxic": False, "avatar_image_nsfw": True}, status=status.HTTP_200_OK)
+            return JsonResponse({"error": "Innapropriate content detected in your image."}, status=status.HTTP_200_OK)
         # Get Supabase client
         supabase = get_supabase_client()
 
@@ -77,7 +77,7 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
             return JsonResponse({"error": "Failed to upload community avatar"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return JsonResponse(
-        {"community_id": community.community_id, "title": community.title, "toxic": False, "avatar_image_nsfw": False},
+        {"community_id": community.community_id, "title": community.title},
         status=status.HTTP_201_CREATED
     )
 
