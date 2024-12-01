@@ -310,8 +310,8 @@ def updateQuestion(request: HttpRequest, question_id: str) -> JsonResponse:
     # Check for content moderation (toxic content)
     title_text = request.data.get("title", "")
     description_text = request.data.get("description", "")
-    if check_content(title_text) or check_content(description_text):
-        return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
+    if check_content(title_text + description_text):
+        return JsonResponse({"error": "Toxic content detected in your question."}, status=status.HTTP_200_OK)
 
     # Update the question using the serializer
     serializer = QuestionSerializer(instance=question, data=request.data, partial=True)
