@@ -12,7 +12,8 @@ from django.db.models import Count, Q
 from uuid import UUID
 from services.notification_service import NotificationService
 from rest_framework.parsers import MultiPartParser
-from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists, check_content, check_img_content
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists, check_content
+from services.ai_model_service import check_img_content
 
 '''POST Requests'''
 

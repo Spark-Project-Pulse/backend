@@ -4,7 +4,8 @@ from rest_framework.parsers import MultiPartParser
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from rest_framework import status
-from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists, check_img_content
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
+from services.ai_model_service import check_img_content
 from ..models import Users, UserRoles
 from ..serializers import UserSerializer, UserRolesSerializer
 
