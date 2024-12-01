@@ -147,3 +147,37 @@ def check_img_content(img_content: bytes, threshold: float = 0.8) -> bool:
         # Log or handle the exception appropriately
         print(f"Error during NSFW content check: {e}")
         return False
+
+
+def check_content(text, threshold=0.9, restricted_labels=None):
+    """
+    Checks if the provided text contains restricted content.
+
+    Args:
+      text (str): The message to check.
+      threshold (float): Minimum confidence level for flagging content.
+      restricted_labels (list of str): Labels to restrict (default: all toxic-related labels).
+
+    Returns:
+      bool: True if restricted content is detected, otherwise False.
+    """
+    if restricted_labels is None:
+        restricted_labels = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
+
+    try:
+        classifications = client.text_classification(
+            text=text,
+            model="unitary/toxic-bert",
+        )
+
+        # Debugging: Print raw output for reference
+        print("Raw classifications:", classifications)
+
+        for classification in classifications:
+            if classification['label'] in restricted_labels and classification['score'] >= threshold:
+                return True
+
+        return False  # No restricted content detected
+    except Exception as e:
+        print(f"Error during content check: {e}")
+        return False

@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
-from ..supabase_utils import check_content
+from services.ai_model_service import check_content
 from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
 from services.notification_service import NotificationService
