@@ -163,7 +163,7 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
 
     # Image Content moderation
     if check_img_content(image_content):
-        return JsonResponse({"profile_image_nsfw": True}, status=status.HTTP_200_OK)
+        return JsonResponse({"error": "Innapropriate content detected in your image."}, status=status.HTTP_200_OK)
 
     # Create bucket if it does not exist
     if not create_bucket_if_not_exists('profile-images'):
