@@ -13,7 +13,6 @@ psycopg2-binary = "*"
 djangorestframework = "*"
 google-cloud-secret-manager = "*"
 huggingface-hub = "*"
-pillow = "*"
 
 [dev-packages]
 
