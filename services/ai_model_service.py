@@ -170,9 +170,6 @@ def check_content(text, threshold=0.9, restricted_labels=None):
             model="unitary/toxic-bert",
         )
 
-        # Debugging: Print raw output for reference
-        print("Raw classifications:", classifications)
-
         for classification in classifications:
             if classification['label'] in restricted_labels and classification['score'] >= threshold:
                 return True
