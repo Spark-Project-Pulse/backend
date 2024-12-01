@@ -324,3 +324,31 @@ def updateQuestion(request: HttpRequest, question_id: str) -> JsonResponse:
 
     # Return validation errors
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["DELETE"])
+def deleteQuestion(request: HttpRequest, question_id: str) -> JsonResponse:
+    """
+    Delete a question by its ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        question_id (str): The ID of the question to delete.
+
+    Returns:
+        JsonResponse: A response indicating success or failure.
+    """
+    # Fetch the question from the database
+    question = get_object_or_404(Questions, question_id=question_id)
+    
+    # Check if the asker in the request matches the question's asker
+    if request.data.get("asker") != str(question.asker_id):
+        return JsonResponse(
+            {"error": "You are not authorized to update this question."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+        
+    # Delete the question
+    question.delete()
+    return JsonResponse(
+        {"message": "Question deleted successfully"}, status=status.HTTP_200_OK
+    )

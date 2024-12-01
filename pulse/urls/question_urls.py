@@ -11,4 +11,5 @@ urlpatterns = [
     path('search/', question_views.searchQuestions, name='search_questions'),
     path('changeMark/<str:question_id>/', question_views.changeMark, name='changeMark'),
     path('update/<str:question_id>/', question_views.updateQuestion, name='updateQuestion'),
+    path('delete/<str:question_id>/', question_views.deleteQuestion, name='deleteQuestion'),
 ]
