@@ -56,15 +56,7 @@ class UserBadgeProgressSerializer(serializers.ModelSerializer):
     badge_tier_info = BadgeTierSerializer(source='badge_tier', read_only=True)
     class Meta:
         model = UserBadgeProgress
-        fields = [
-            'id',
-            'user',
-            'badge',
-            'badge_info',
-            'badge_tier',
-            'badge_tier_info',
-            'earned_at',
-        ]
+        fields = '__all__'
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -80,12 +72,24 @@ class AnswerSerializer(serializers.ModelSerializer):
     def get_expert_badges(self, obj):
         user = obj.expert
         if user:
-            question_tags = obj.question.tags.all()
-            relevant_badges = user.userbadge_set.filter(
-                badge__associated_tag__in=question_tags
+            # Fetch global badges
+            global_badges = user.userbadge_set.filter(
+                badge__is_global=True
             ).select_related('badge', 'badge_tier')
-            serializer = UserBadgeSerializer(relevant_badges, many=True)
-        return serializer.data
+
+            # Fetch tag-specific badges based on the answer's tags
+            answer_tags = obj.question.tags.all()
+            tag_specific_badges = user.userbadge_set.filter(
+                badge__associated_tag__in=answer_tags,
+                badge__is_global=False
+            ).select_related('badge', 'badge_tier')
+
+            # Combine both querysets
+            all_badges = global_badges.union(tag_specific_badges)
+
+            serializer = UserBadgeSerializer(all_badges, many=True)
+            return serializer.data
+        return []
 
         
 class CommentSerializer(serializers.ModelSerializer):

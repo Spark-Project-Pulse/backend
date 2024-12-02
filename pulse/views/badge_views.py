@@ -3,6 +3,7 @@ from django.http import JsonResponse, HttpRequest
 from ..models import Badge, UserBadge, UserBadgeProgress, Answers
 from ..serializers import BadgeSerializer, UserBadgeSerializer, UserBadgeProgressSerializer
 from rest_framework import status
+from django.db import connection
 
 @api_view(["GET"])
 def getAllBadges(request: HttpRequest) -> JsonResponse:
@@ -56,7 +57,7 @@ def getUserBadgeProgress(request: HttpRequest, user_id: str) -> JsonResponse:
 
 def updateProgressAndAwardBadges(user):
     """
-    Updates the progress for badges and awards badges with specific tiers if criteria are met.
+    Updates the progress for badges and ensures progress aligns with reputation.
     """
     try:
         from django.db.models import Sum
@@ -65,16 +66,14 @@ def updateProgressAndAwardBadges(user):
 
         logger = logging.getLogger(__name__)
 
-        # Fetch all badges with their related tiers and associated tags
+        # Fetch all badges with related tiers and associated tags
         badges = Badge.objects.all().prefetch_related('tiers', 'associated_tag')
 
         for badge in badges:
-            # Determine the user's relevant reputation for the badge
+            # Determine user's relevant reputation
             if badge.is_global:
-                # For global badges, use the user's total reputation
                 reputation = user.reputation
             else:
-                # For tag-specific badges, calculate reputation from answers with the associated tag
                 if badge.associated_tag:
                     tag_reputation = (
                         Answers.objects.filter(
@@ -86,65 +85,71 @@ def updateProgressAndAwardBadges(user):
                     )
                     reputation = tag_reputation
                 else:
-                    # If the badge has no associated tag, skip it
                     logger.warning(f"Badge '{badge.name}' has no associated tag and is not global.")
                     continue
 
-            # Get all badge tiers the user qualifies for
+            # Get qualifying badge tiers
             qualifying_tiers = badge.tiers.filter(
                 reputation_threshold__lte=reputation
             ).order_by('-tier_level')
 
-            if qualifying_tiers.exists():
-                highest_tier = qualifying_tiers.first()
+            highest_tier = qualifying_tiers.first() if qualifying_tiers.exists() else None
 
-                # Check if the user already has this badge
-                user_badge, created = UserBadge.objects.get_or_create(
-                    user=user,
-                    badge=badge,
-                    defaults={
-                        'badge_tier': highest_tier,
-                        'earned_at': timezone.now(),
-                    }
-                )
-                if not created:
-                    # Check if the user's badge tier needs to be upgraded
-                    current_tier_level = user_badge.badge_tier.tier_level
-                    if highest_tier.tier_level > current_tier_level:
-                        # Upgrade the badge tier
-                        user_badge.badge_tier = highest_tier
-                        user_badge.earned_at = timezone.now()
-                        user_badge.save()
-                        logger.info(f"Upgraded badge '{badge.name}' to tier '{highest_tier.name}' for user '{user.username}'.")
-                else:
-                    logger.info(f"Awarded badge '{badge.name}' with tier '{highest_tier.name}' to user '{user.username}'.")
-            else:
-                # User hasn't qualified for any tier yet; optionally handle progress tracking
-                pass
+            # Award or upgrade badge tier
+            user_badge, created = UserBadge.objects.get_or_create(
+                user=user,
+                badge=badge,
+                defaults={
+                    'badge_tier': highest_tier,
+                    'earned_at': timezone.now(),
+                }
+            )
+            if not created and highest_tier:
+                current_tier_level = user_badge.badge_tier.tier_level
+                if highest_tier.tier_level > current_tier_level:
+                    user_badge.badge_tier = highest_tier
+                    user_badge.earned_at = timezone.now()
+                    user_badge.save()
 
-            # Determine progress towards the next tier
+            # Determine progress towards next tier
             next_tier = badge.tiers.filter(
                 reputation_threshold__gt=reputation
             ).order_by('reputation_threshold').first()
 
-            progress_target = next_tier.reputation_threshold if next_tier else None
+            # Progress target should stay at the highest unlocked tier if reputation drops
+            progress_target = max(
+                user_badge.badge_tier.reputation_threshold
+                if hasattr(user_badge, 'badge_tier') and user_badge.badge_tier else 0,
+                next_tier.reputation_threshold if next_tier else 0
+            )
+
+            # Align progress value
+            min_progress_value = (
+                user_badge.badge_tier.reputation_threshold
+                if hasattr(user_badge, 'badge_tier') and user_badge.badge_tier else 0
+            )
+            progress_value = max(reputation, min_progress_value)
 
             # Update or create UserBadgeProgress
             progress, created = UserBadgeProgress.objects.get_or_create(
                 user=user,
                 badge=badge,
                 defaults={
-                    'progress_value': reputation,
+                    'progress_value': progress_value,
                     'progress_target': progress_target,
                 }
             )
             if not created:
-                progress.progress_value = reputation
+                # Ensure the progress value is at least the minimum for the achieved badge
+                progress.progress_value = progress_value
                 progress.progress_target = progress_target
                 progress.save()
-                logger.info(f"Updated progress for badge '{badge.name}' for user '{user.username}'.")
+
+                # Log progress update
+                logger.info(
+                    f"Updated progress for badge '{badge.name}' for user '{user.username}'."
+                )
 
     except Exception as e:
-        # Log the exception for debugging
         logger.error(f"Error in updateProgressAndAwardBadges for user {user.username}: {e}")
         raise
