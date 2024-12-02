@@ -53,7 +53,6 @@ jobs:
           --region="${{ secrets.REGION }}" \
           --platform managed \
           --ingress all \
-          --allow-unauthenticated \
           --cpu-throttling \
           --memory=2Gi \
           --min-instances 0 \
@@ -73,12 +72,3 @@ jobs:
           -v /tmp/gcp-key.json:/app/gcp-key.json \
           ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
           python manage.py migrate 
-
-    # Given the backend is currently allowed to be accessed by anyone, we don't need this in the deployment workflow
-    # TODO: Add service account email secret into GitHub Secrets when this step is reapplied
-    # - name: Grant Frontend Invoker Permissions so frontend can access the backend
-    #   run: |
-    #     gcloud run services add-iam-policy-binding pulse-backend \
-    #       --member="serviceAccount:${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}" \
-    #       --role="roles/run.invoker" \
-    #       --region="${{ secrets.REGION }}"
