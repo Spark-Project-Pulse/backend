@@ -129,7 +129,7 @@ def getAnswersByQuestionId(request: HttpRequest, question_id: str) -> JsonRespon
     answers = Answers.objects.filter(question=question_id)
     
     # Serialize the answers, the serializer will include expert_badges
-    serialized_answers = AnswerSerializer(answers, many=True).data
+    serializer = AnswerSerializer(answers, many=True).data
 
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
