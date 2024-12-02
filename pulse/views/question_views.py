@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
 from rest_framework import status
-from ..supabase_utils import check_content
+from services.ai_model_service import check_content
 from pulse.models import Questions
 from ..serializers import QuestionSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
@@ -17,7 +17,6 @@ from django.db.models import Count, Q, F
 from django.db.models.functions import Greatest
 from django.contrib.postgres.aggregates import StringAgg
 from uuid import UUID
-import logging
 
 @api_view(["POST"])
 def createQuestion(request: HttpRequest) -> JsonResponse:
@@ -39,8 +38,8 @@ def createQuestion(request: HttpRequest) -> JsonResponse:
         # Content moderation
         title_text = request.data['title']
         description_text = request.data['description']
-        if check_content(title_text) or check_content(description_text):
-            return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
+        if check_content(title_text + description_text):
+            return JsonResponse({"error": "Toxic content detected in your question."}, status=status.HTTP_200_OK)
         question = serializer.save()  # Save the valid data as a new Question instance
         return JsonResponse(
             {"question_id": question.question_id}, status=status.HTTP_201_CREATED
@@ -311,8 +310,8 @@ def updateQuestion(request: HttpRequest, question_id: str) -> JsonResponse:
     # Check for content moderation (toxic content)
     title_text = request.data.get("title", "")
     description_text = request.data.get("description", "")
-    if check_content(title_text) or check_content(description_text):
-        return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
+    if check_content(title_text + description_text):
+        return JsonResponse({"error": "Toxic content detected in your question."}, status=status.HTTP_200_OK)
 
     # Update the question using the serializer
     serializer = QuestionSerializer(instance=question, data=request.data, partial=True)

@@ -1,10 +1,11 @@
 from django.conf import settings
 from huggingface_hub import InferenceClient
 import json
-import re
+
 
 # Initialize the InferenceClient with the API key for the Hugging Face Inference API
 client = InferenceClient(api_key=settings.HUGGINGFACE_TOKEN)
+
 
 def generate_code_review(project_title, project_description, file_name, file_content):
     '''
@@ -84,6 +85,7 @@ def generate_code_review(project_title, project_description, file_name, file_con
 
     return suggestions.get("suggestions", [])
 
+
 def generate_ai_answer(question_content):
     '''
     This function sends a message to the AI model with a question and returns the answer provided by the model.
@@ -112,3 +114,67 @@ def generate_ai_answer(question_content):
         response_text += chunk.choices[0].delta.content
 
     return response_text
+
+
+def check_img_content(img_content: bytes, threshold: float = 0.8) -> bool:
+    """
+    Checks if the provided text contains NSFW content.
+
+    Args:
+        img_content (bytes): The image in bytes to check for NSFW
+        threshold (float): Minimum confidence level for detecting NSFW
+
+    Returns:
+        bool: True if NSFW is detected, otherwise False.
+    """
+    try:
+        classifications = client.image_classification(
+            image=img_content,
+            model="Falconsai/nsfw_image_detection",
+        )
+
+        for classification in classifications:
+            label = classification.label.lower()
+            score = classification.score
+
+            if label == "nsfw" and score >= threshold:
+                return True
+
+        # No NSFW content detected above the threshold
+        return False
+
+    except Exception as e:
+        # Log or handle the exception appropriately
+        print(f"Error during NSFW content check: {e}")
+        return False
+
+
+def check_content(text, threshold=0.9, restricted_labels=None):
+    """
+    Checks if the provided text contains restricted content.
+
+    Args:
+      text (str): The message to check.
+      threshold (float): Minimum confidence level for flagging content.
+      restricted_labels (list of str): Labels to restrict (default: all toxic-related labels).
+
+    Returns:
+      bool: True if restricted content is detected, otherwise False.
+    """
+    if restricted_labels is None:
+        restricted_labels = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
+
+    try:
+        classifications = client.text_classification(
+            text=text,
+            model="unitary/toxic-bert",
+        )
+
+        for classification in classifications:
+            if classification['label'] in restricted_labels and classification['score'] >= threshold:
+                return True
+
+        return False  # No restricted content detected
+    except Exception as e:
+        print(f"Error during content check: {e}")
+        return False

@@ -3,11 +3,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[[source]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-verify_ssl = true
-
 [packages]
 django = "*"
 gunicorn = "*"
@@ -17,12 +12,7 @@ django-cors-headers = "*"
 psycopg2-binary = "*"
 djangorestframework = "*"
 google-cloud-secret-manager = "*"
-transformers = "*"
-torch = { version = "==2.5.0", extras = ["cpu"], index = "pytorch-cpu" }
-strenum = "*"
 huggingface-hub = "*"
-pillow = "*"
-torchvision = { index = "pytorch-cpu" }
 
 [dev-packages]
 

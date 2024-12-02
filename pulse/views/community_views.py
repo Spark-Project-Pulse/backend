@@ -12,7 +12,8 @@ from django.db.models import Count, Q
 from uuid import UUID
 from services.notification_service import NotificationService
 from rest_framework.parsers import MultiPartParser
-from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists, check_content, check_img_content
+from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
+from services.ai_model_service import check_img_content, check_content
 
 '''POST Requests'''
 
@@ -38,8 +39,8 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     # Text Content moderation
     title = request.data['title']
     description = request.data['description']
-    if check_content(title) or check_content(description):
-        return JsonResponse({ "community_id": "null", "title": title, "toxic": True, "avatar_image_nsfw": False}, status=status.HTTP_200_OK)
+    if check_content(title + description):
+        return JsonResponse({"error": "Toxic content detected in your community."}, status=status.HTTP_200_OK)
     
     # Save the valid data as a new Community instance
     community = serializer.save()
@@ -50,7 +51,7 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
         # Image Content moderation
         image_content = avatar_file.read()
         if check_img_content(image_content):
-            return JsonResponse({ "community_id": "null", "title": title, "toxic": False, "avatar_image_nsfw": True}, status=status.HTTP_200_OK)
+            return JsonResponse({"error": "Innapropriate content detected in your image."}, status=status.HTTP_200_OK)
         # Get Supabase client
         supabase = get_supabase_client()
 
@@ -76,7 +77,7 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
             return JsonResponse({"error": "Failed to upload community avatar"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return JsonResponse(
-        {"community_id": community.community_id, "title": community.title, "toxic": False, "avatar_image_nsfw": False},
+        {"community_id": community.community_id, "title": community.title},
         status=status.HTTP_201_CREATED
     )
 

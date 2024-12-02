@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
-from ..supabase_utils import check_content
-from ..models import Answers, CommunityMembers, Votes, Users, Tags
+from services.ai_model_service import check_content
+from ..models import Answers, CommunityMembers, Votes, Users
 from ..serializers import AnswerSerializer
 from services.notification_service import NotificationService
 
@@ -23,7 +23,7 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
         # Content moderation
         response_text = request.data['response']
         if check_content(response_text):
-            return JsonResponse({"toxic": True}, status=status.HTTP_200_OK)
+            return JsonResponse({"error": "Toxic content detected in your answer."}, status=status.HTTP_200_OK)
         
         answer: Answers = serializer.save()  # Save the new answer
 
@@ -131,10 +131,7 @@ def getAnswersByQuestionId(request: HttpRequest, question_id: str) -> JsonRespon
     # Serialize the answers, the serializer will include expert_badges
     serialized_answers = AnswerSerializer(answers, many=True).data
 
-    return JsonResponse(serialized_answers, safe=False, status=status.HTTP_200_OK)
-
-
-
+    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_id: str) -> JsonResponse:
