@@ -38,6 +38,7 @@ class BadgeTierSerializer(serializers.ModelSerializer):
 class UserBadgeSerializer(serializers.ModelSerializer):
     badge_info = BadgeSerializer(source='badge', read_only=True)
     badge_tier_info = BadgeTierSerializer(source='badge_tier', read_only=True)
+    is_achieved = serializers.SerializerMethodField()
 
     class Meta:
         model = UserBadge
@@ -49,7 +50,23 @@ class UserBadgeSerializer(serializers.ModelSerializer):
             'badge_tier',
             'badge_tier_info',
             'earned_at',
+            'is_achieved',
         ]
+
+    def get_is_achieved(self, obj):
+        # Retrieve the first tier of the badge
+        first_tier = obj.badge.tiers.order_by('reputation_threshold').first()
+
+        if not first_tier:
+            return False  # If no tiers exist, the badge can't be achieved
+
+        # Retrieve the progress data for the badge
+        try:
+            progress = UserBadgeProgress.objects.get(user=obj.user, badge=obj.badge)
+            return progress.progress_value >= first_tier.reputation_threshold
+        except UserBadgeProgress.DoesNotExist:
+            return False  # If no progress record exists, badge is not achieved
+
 
 class UserBadgeProgressSerializer(serializers.ModelSerializer):
     badge_info = BadgeSerializer(source='badge', read_only=True)
