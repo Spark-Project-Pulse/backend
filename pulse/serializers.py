@@ -24,18 +24,48 @@ class UserRolesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRoles
         fields = '__all__'
-        
-class AnswerSerializer(serializers.ModelSerializer):
-    # This allows us to get the user info of the answerer as a dictionary, based on the expert_id (for GET requests)
-    expert_info = UserSerializer(source='expert', read_only=True)
     
+class BadgeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Answers
-        fields = '__all__'  # or specify the fields you want
+        model = Badge
+        fields = ['badge_id', 'name', 'description', 'image_url']
 
-    from rest_framework import serializers
-from .models import *
-from django.db.models import F
+class BadgeTierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BadgeTier
+        fields = ['tier_level', 'name', 'description', 'image_url', 'reputation_threshold']
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    badge_info = BadgeSerializer(source='badge', read_only=True)
+    badge_tier_info = BadgeTierSerializer(source='badge_tier', read_only=True)
+
+    class Meta:
+        model = UserBadge
+        fields = [
+            'id',
+            'user',
+            'badge',
+            'badge_info',
+            'badge_tier',
+            'badge_tier_info',
+            'earned_at',
+        ]
+
+class UserBadgeProgressSerializer(serializers.ModelSerializer):
+    badge_info = BadgeSerializer(source='badge', read_only=True)
+    badge_tier_info = BadgeTierSerializer(source='badge_tier', read_only=True)
+    class Meta:
+        model = UserBadgeProgress
+        fields = [
+            'id',
+            'user',
+            'badge',
+            'badge_info',
+            'badge_tier',
+            'badge_tier_info',
+            'earned_at',
+        ]
+
 
 class AnswerSerializer(serializers.ModelSerializer):
     # Include expert info
@@ -45,36 +75,24 @@ class AnswerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Answers
-        fields = '__all__'  # Ensure 'expert_badges' is included if you're specifying fields explicitly
+        fields = '__all__'
 
     def get_expert_badges(self, obj):
-        # Get the expert user
         user = obj.expert
         if user:
-            # Get the tags associated with the question
             question_tags = obj.question.tags.all()
-            # Get the relevant badges associated with those tags
             relevant_badges = user.userbadge_set.filter(
                 badge__associated_tag__in=question_tags
-            ).select_related('badge')
-            # Serialize the badges
-            badges = []
-            for user_badge in relevant_badges:
-                badge = user_badge.badge
-                badges.append({
-                    'badge_id': badge.badge_id,
-                    'name': badge.name,
-                    'description': badge.description,
-                    'image_url': badge.image_url
-                })
-            return badges
-        return []
+            ).select_related('badge', 'badge_tier')
+            serializer = UserBadgeSerializer(relevant_badges, many=True)
+        return serializer.data
 
         
 class CommentSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the commenter as a dictionary, based on the expert_id (for GET requests)
     expert_info = UserSerializer(source='expert', read_only=True)
-    
+    expert_badges = UserBadgeSerializer(source='expert.user_badges.all', many=True, read_only=True)
+
     class Meta:
         model = Comments
         fields = '__all__' 
@@ -147,24 +165,4 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notifications
-        fields = '__all__'
-
-class BadgeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Badge
-        fields = ['badge_id', 'name', 'description', 'image_url']
-
-
-class UserBadgeSerializer(serializers.ModelSerializer):
-    badge_info = BadgeSerializer(source='badge', read_only=True)
-
-    class Meta:
-        model = UserBadge
-        fields = '__all__'
-
-
-class UserBadgeProgressSerializer(serializers.ModelSerializer):
-    badge_info = BadgeSerializer(source='badge', read_only=True)
-    class Meta:
-        model = UserBadgeProgress
         fields = '__all__'
