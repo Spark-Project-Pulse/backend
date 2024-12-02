@@ -66,18 +66,27 @@ def updateProgressAndAwardBadges(user):
 
         logger = logging.getLogger(__name__)
 
+        # Fetch all badges with related tiers and associated tags
         badges = Badge.objects.all().prefetch_related('tiers', 'associated_tag')
 
         for badge in badges:
             # Determine user's relevant reputation
-            reputation = user.reputation if badge.is_global else (
-                Answers.objects.filter(
-                    expert=user,
-                    question__tags=badge.associated_tag
-                )
-                .aggregate(total_score=Sum("score"))
-                .get("total_score") or 0
-            )
+            if badge.is_global:
+                reputation = user.reputation
+            else:
+                if badge.associated_tag:
+                    tag_reputation = (
+                        Answers.objects.filter(
+                            expert=user,
+                            question__tags=badge.associated_tag
+                        )
+                        .aggregate(total_score=Sum("score"))
+                        .get("total_score") or 0
+                    )
+                    reputation = tag_reputation
+                else:
+                    logger.warning(f"Badge '{badge.name}' has no associated tag and is not global.")
+                    continue
 
             # Fetch qualifying tiers
             qualifying_tiers = badge.tiers.filter(
@@ -85,7 +94,7 @@ def updateProgressAndAwardBadges(user):
             ).order_by('-tier_level')
             highest_tier = qualifying_tiers.first()
 
-            # Get next tier (if any)
+            # Fetch the next tier (if any)
             next_tier = badge.tiers.filter(
                 reputation_threshold__gt=reputation
             ).order_by('reputation_threshold').first()
@@ -105,34 +114,31 @@ def updateProgressAndAwardBadges(user):
                     user_badge.earned_at = timezone.now()
                     user_badge.save()
 
-            # Update progress
-            progress_target = max(
-                (highest_tier.reputation_threshold if highest_tier else 0),
-                (next_tier.reputation_threshold if next_tier else 0)
+            # Calculate the new progress target
+            new_progress_target = (
+                next_tier.reputation_threshold if next_tier else 
+                (highest_tier.reputation_threshold if highest_tier else 0)
             )
-            progress_value = max(reputation, user_badge.badge_tier.reputation_threshold if user_badge.badge_tier else 0)
 
-            # Calculate if the badge is achieved
-            is_achieved = progress_value >= (highest_tier.reputation_threshold if highest_tier else 0)
-
+            # Keep the progress_target if it would decrease
             progress, progress_created = UserBadgeProgress.objects.get_or_create(
                 user=user,
                 badge=badge,
                 defaults={
-                    'progress_value': progress_value,
-                    'progress_target': progress_target,
+                    'progress_value': reputation,
+                    'progress_target': new_progress_target,
                 }
             )
             if not progress_created:
-                progress.progress_value = progress_value
-                progress.progress_target = progress_target
+                progress.progress_value = max(reputation, user_badge.badge_tier.reputation_threshold if user_badge.badge_tier else 0)
+                # Only update progress_target if it increases
+                if new_progress_target > (progress.progress_target or 0):
+                    progress.progress_target = new_progress_target
                 progress.save()
 
-            # Log whether the badge is achieved
-            if is_achieved:
-                logger.info(f"Badge '{badge.name}' is achieved for user '{user.username}'.")
-            else:
-                logger.info(f"User '{user.username}' is progressing towards badge '{badge.name}'.")
+                logger.info(
+                    f"Updated progress for badge '{badge.name}' for user '{user.username}'."
+                )
 
     except Exception as e:
         logger.error(f"Error in updateProgressAndAwardBadges for user {user.username}: {e}")
