@@ -1,7 +1,5 @@
 name: Deploy Backend to Google Cloud Run
 
-# remove the hotfix branch when merging the hotfix branch to main
-
 on:
   push:
     branches:
@@ -26,7 +24,7 @@ jobs:
       with:
         project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
 
-    # Step 4: Configure Docker to use gcloud as a credential helper
+    # Configure Docker to use gcloud as a credential helper
     - name: Configure Docker for Google Artifact Registry
       run: |
         gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
@@ -60,7 +58,6 @@ jobs:
           --port 8000 \
           --set-env-vars GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
 
-    # TODO: Separate this step into its own workflow (I think that's a good idea because it isn't technically necessary for cloud deployment?)
     # The service account in this step only has access to Google Cloud Secret Manager (the docker image needs to be able to access the secrets)
     - name: Run Migrations on the production database
       run: |
@@ -71,4 +68,4 @@ jobs:
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           -v /tmp/gcp-key.json:/app/gcp-key.json \
           ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/pulse-backend/image-${{ github.sha }} \
-          python manage.py migrate 
+          python manage.py migrate
