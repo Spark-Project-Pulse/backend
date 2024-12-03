@@ -223,6 +223,7 @@ class UserRoles(models.Model):
         db_table = 'UserRoles'
 
 class UserBadgeProgress(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey("Users", on_delete=models.CASCADE)
     badge = models.ForeignKey("Badge", on_delete=models.CASCADE)
     progress_value = models.BigIntegerField(default=0)
@@ -235,6 +236,7 @@ class UserBadgeProgress(models.Model):
 
 
 class UserBadge(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey("Users", on_delete=models.CASCADE)
     badge = models.ForeignKey("Badge", on_delete=models.CASCADE)
     badge_tier = models.ForeignKey("BadgeTier", on_delete=models.CASCADE, null=True, blank=True)
@@ -245,6 +247,7 @@ class UserBadge(models.Model):
         unique_together = ("user", "badge")  # Ensures one badge per user
     
 class BadgeTier(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='tiers')
     tier_level = models.PositiveIntegerField()  # e.g., 1 for Tier I, 2 for Tier II
     name = models.CharField(max_length=255)     # e.g., 'Python Pro I', 'Python Pro II'
