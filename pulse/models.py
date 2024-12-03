@@ -87,7 +87,7 @@ class Communities(models.Model):
             )
 
 class Badge(models.Model):
-    badge_id = models.AutoField(primary_key=True)
+    badge_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField()
     description = models.TextField()
     associated_tag = models.ForeignKey(
