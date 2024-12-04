@@ -11,6 +11,7 @@ from .tag_urls import urlpatterns as tag_urls
 from .comment_urls import urlpatterns as comment_urls
 from .community_urls import urlpatterns as community_urls
 from .notification_urls import urlpatterns as notification_urls
+from .badge_urls import urlpatterns as badge_urls
 
 # All URL routes
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
     path('comments/', include(comment_urls)),
     path('communities/', include(community_urls)),
     path('notifications/', include(notification_urls)),
+    path('badges/', include(badge_urls)),
 ]

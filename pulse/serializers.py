@@ -24,19 +24,96 @@ class UserRolesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRoles
         fields = '__all__'
-        
+    
+class BadgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Badge
+        fields = ['badge_id', 'name', 'description', 'image_url']
+
+class BadgeTierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BadgeTier
+        fields = ['tier_level', 'name', 'description', 'image_url', 'reputation_threshold']
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    badge_info = BadgeSerializer(source='badge', read_only=True)
+    badge_tier_info = BadgeTierSerializer(source='badge_tier', read_only=True)
+    is_achieved = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserBadge
+        fields = [
+            'id',
+            'user',
+            'badge',
+            'badge_info',
+            'badge_tier',
+            'badge_tier_info',
+            'earned_at',
+            'is_achieved',
+        ]
+
+    def get_is_achieved(self, obj):
+        # Retrieve the first tier of the badge
+        first_tier = obj.badge.tiers.order_by('reputation_threshold').first()
+
+        if not first_tier:
+            return False  # If no tiers exist, the badge can't be achieved
+
+        # Retrieve the progress data for the badge
+        try:
+            progress = UserBadgeProgress.objects.get(user=obj.user, badge=obj.badge)
+            return progress.progress_value >= first_tier.reputation_threshold
+        except UserBadgeProgress.DoesNotExist:
+            return False  # If no progress record exists, badge is not achieved
+
+
+class UserBadgeProgressSerializer(serializers.ModelSerializer):
+    badge_info = BadgeSerializer(source='badge', read_only=True)
+    badge_tier_info = BadgeTierSerializer(source='badge_tier', read_only=True)
+    class Meta:
+        model = UserBadgeProgress
+        fields = '__all__'
+
+
 class AnswerSerializer(serializers.ModelSerializer):
-    # This allows us to get the user info of the answerer as a dictionary, based on the expert_id (for GET requests)
+    # Include expert info
     expert_info = UserSerializer(source='expert', read_only=True)
+    # Add expert_badges field
+    expert_badges = serializers.SerializerMethodField()
     
     class Meta:
         model = Answers
-        fields = '__all__'  # or specify the fields you want
+        fields = '__all__'
+
+    def get_expert_badges(self, obj):
+        user = obj.expert
+        if user:
+            # Fetch global badges
+            global_badges = user.userbadge_set.filter(
+                badge__is_global=True
+            ).select_related('badge', 'badge_tier')
+
+            # Fetch tag-specific badges based on the answer's tags
+            answer_tags = obj.question.tags.all()
+            tag_specific_badges = user.userbadge_set.filter(
+                badge__associated_tag__in=answer_tags,
+                badge__is_global=False
+            ).select_related('badge', 'badge_tier')
+
+            # Combine both querysets
+            all_badges = global_badges.union(tag_specific_badges)
+
+            serializer = UserBadgeSerializer(all_badges, many=True)
+            return serializer.data
+        return []
+
         
 class CommentSerializer(serializers.ModelSerializer):
     # This allows us to get the user info of the commenter as a dictionary, based on the expert_id (for GET requests)
     expert_info = UserSerializer(source='expert', read_only=True)
-    
+    expert_badges = UserBadgeSerializer(source='expert.user_badges.all', many=True, read_only=True)
+
     class Meta:
         model = Comments
         fields = '__all__' 

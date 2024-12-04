@@ -128,8 +128,8 @@ def getAnswersByQuestionId(request: HttpRequest, question_id: str) -> JsonRespon
     # Retrieve all answers for the given question_id
     answers = Answers.objects.filter(question=question_id)
     
-    # Serialize the list of answers, setting many=True to indicate multiple objects
-    serializer = AnswerSerializer(answers, many=True)
+    # Serialize the answers, the serializer will include expert_badges
+    serializer = AnswerSerializer(answers, many=True).data
 
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
@@ -138,7 +138,7 @@ def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_
     # Retrieve all answers for the given question_id
     answers = Answers.objects.filter(question=question_id)
     
-    # Serialize the list of answers, setting many=True to indicate multiple objects
+    # Serialize the list of answers
     serialized_answers = AnswerSerializer(answers, many=True).data
     
     for answer in serialized_answers:
@@ -150,6 +150,7 @@ def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_
         answer['curr_user_downvoted'] = user_vote.vote_type == 'downvote' if user_vote else False
 
     return JsonResponse(serialized_answers, safe=False, status=status.HTTP_200_OK)
+
 
 '''----- HELPER FUNCTIONS -----'''
 

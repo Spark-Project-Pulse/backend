@@ -8,6 +8,7 @@ from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
 from services.ai_model_service import check_img_content
 from ..models import Users, UserRoles
 from ..serializers import UserSerializer, UserRolesSerializer
+from ..views import badge_views
 
 '''POST Operations'''
 
@@ -52,6 +53,7 @@ def changeReputationByAmount(request: HttpRequest, user_id: str, amount: str) ->
         amount = int(amount)  # Cast amount to int
         user.reputation += amount  # Change the reputation
         user.save()  # Save the updated user object
+        badge_views.updateProgressAndAwardBadges(user)
         return JsonResponse(
             {"user_id": user.user_id, "new_reputation": user.reputation},
             status=status.HTTP_200_OK

@@ -265,6 +265,12 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    USING (bucket_id = 'community-avatars');
    ```
 
+   ``` sql
+   -- enable public operations on all buckets (this is needed to avoid RLS issues)
+   CREATE POLICY "Allow all bucket operations"
+   ON storage. buckets
+   FOR ALL USING (true) ;
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
