@@ -20,4 +20,5 @@ urlpatterns = [
     path('getUserCommunitiesById/<str:user_id>/', community_views.getUserCommunitiesById, name='getUserCommunitiesById'),
     path('getAllCommunityRequests/', community_views.getAllCommunityRequests, name='getAllCommunityRequests'),
     path('userIsPartOfCommunity/<str:title>/<str:user_id>/', community_views.userIsPartOfCommunity, name='userIsPartOfCommunity'),
+    path('search/', community_views.searchCommunities, name='searchCommunities'),
 ]
