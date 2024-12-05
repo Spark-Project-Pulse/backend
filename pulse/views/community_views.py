@@ -14,6 +14,15 @@ from services.notification_service import NotificationService
 from rest_framework.parsers import MultiPartParser
 from ..supabase_utils import get_supabase_client, create_bucket_if_not_exists
 from services.ai_model_service import check_img_content, check_content
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import throttle_classes
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
+from django.db.models import Count, Q, F
+from django.db.models.functions import Greatest
+from django.contrib.postgres.aggregates import StringAgg
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from django.views.decorators.http import require_GET
 
 '''POST Requests'''
 
@@ -387,3 +396,103 @@ def userIsPartOfCommunity(request: HttpRequest, title: str, user_id: str) -> Jso
 
     return JsonResponse({"is_member": is_member}, status=status.HTTP_200_OK)
 
+class BurstUserRateThrottle(UserRateThrottle):
+    rate = '10/min'
+
+class BurstAnonRateThrottle(AnonRateThrottle):
+    rate = '5/min'
+
+@require_GET
+@csrf_exempt
+@throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
+def searchCommunities(request):
+    # Get query parameters
+    query = request.GET.get('q', '').strip()
+    tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
+    page_number = request.GET.get('page', 1)
+    page_size = request.GET.get('page_size', 20)  # Default page size
+
+    if not query and not tags:
+        return JsonResponse(
+            {"error": "No search query or tags provided."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    communities = Communities.objects.all()
+
+    # Initialize combined_filters as Q() for AND logic
+    combined_filters = Q()
+
+    # Handle search query
+    if query:
+        # Define the search vector with weights
+        search_vector = (
+            SearchVector('title', weight='A') +
+            SearchVector('description', weight='B') +
+            SearchVector('tags__name', weight='C')
+        )
+        search_query = SearchQuery(query, search_type="websearch")
+        
+        # Annotate with full-text search rank and trigram similarities
+        communities = communities.annotate(
+            rank=SearchRank(search_vector, search_query),
+            similarity_title=TrigramSimilarity('title', query),
+            similarity_description=TrigramSimilarity('description', query),
+        ).annotate(
+            tag_names=StringAgg('tags__name', delimiter=' ', distinct=True)
+        ).annotate(
+            similarity_tags=TrigramSimilarity('tag_names', query)
+        ).annotate(
+            total_similarity=Greatest(
+                F('similarity_title'),
+                F('similarity_description'),
+                F('similarity_tags')
+            )
+        )
+
+        # Combine search filters using OR logic within search criteria
+        search_filter = Q(search_vector=search_query) | Q(total_similarity__gt=0.05)
+
+        combined_filters &= search_filter
+
+    # Handle tag filters
+    if tags:
+        try:
+            # Convert tag IDs to UUID objects
+            tag_uuids = [UUID(tag_id) for tag_id in tags]
+        except ValueError:
+            return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        tag_filters = Q()
+        for tag_uuid in tag_uuids:
+            tag_filters &= Q(tags__tag_id=tag_uuid)
+        
+        combined_filters &= tag_filters
+
+    # Apply the combined AND filters
+    communities = communities.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
+
+    # Implement Pagination
+    try:
+        page_number = int(page_number)
+        page_size = int(page_size)
+        if page_number < 1 or page_size < 1:
+            raise ValueError
+    except ValueError:
+        return JsonResponse({'error': 'Invalid page or page_size parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    paginator = Paginator(communities, page_size)
+    try:
+        paginated_communities = paginator.page(page_number)
+    except PageNotAnInteger:
+        paginated_communities = paginator.page(1)
+    except EmptyPage:
+        paginated_communities = paginator.page(paginator.num_pages)
+
+    serializer = CommunitySerializer(paginated_communities.object_list, many=True)
+    return JsonResponse({
+        'communities': serializer.data,
+        'totalCommunities': paginator.count,
+        'totalPages': paginator.num_pages,
+        'currentPage': page_number,
+    }, status=status.HTTP_200_OK)
