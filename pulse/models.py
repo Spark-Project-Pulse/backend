@@ -141,6 +141,7 @@ class Questions(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField('Tags', related_name='questions', blank=True)
     is_answered = models.BooleanField(default=False)
+    view_count = models.BigIntegerField(default=0)
 
     search_vector = SearchVectorField(null=True, blank=True)
 
