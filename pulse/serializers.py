@@ -126,12 +126,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Projects
         fields = '__all__'
         
-class CommunitySerializer(serializers.ModelSerializer):
+class HiveSerializer(serializers.ModelSerializer):
     rank = serializers.FloatField(read_only=True)
     owner_info = UserSerializer(source='owner', read_only=True)
     
     class Meta:
-        model = Communities
+        model = Hives
         fields = '__all__'
 
 class TagSerializer(serializers.ModelSerializer):
@@ -144,7 +144,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     asker_info = UserSerializer(source='asker', read_only=True)
     rank = serializers.FloatField(read_only=True)
     related_project_info = ProjectSerializer(source='related_project', read_only=True)
-    related_community_info = CommunitySerializer(source='related_community', read_only=True)
+    related_hive_info = HiveSerializer(source='related_hive', read_only=True)
     
     class Meta:
         model = Questions
@@ -155,23 +155,23 @@ class VoteSerializer(serializers.ModelSerializer):
         model = Votes
         fields = '__all__'
         
-class CommunityMemberSerializer(serializers.ModelSerializer):
-    # This allows us to get the community info as a dictionary, based on the community_id (for GET requests)
-    community_info = CommunitySerializer(source='community', read_only=True)
+class HiveMemberSerializer(serializers.ModelSerializer):
+    # This allows us to get the hive info as a dictionary, based on the hive_id (for GET requests)
+    hive_info = HiveSerializer(source='hive', read_only=True)
     # This allows us to get the user info as a dictionary, based on the user_id (for GET requests)
     user_info = UserSerializer(source='user', read_only=True)
     
     class Meta:
-        model = CommunityMembers
+        model = HiveMembers
         fields = '__all__'
     
     def to_representation(self, instance):
-        # Modify the community reputation value to be at least 0
+        # Modify the hive reputation value to be at least 0
         representation = super().to_representation(instance)
         
-        # If the community reputation is below 0, set it to 0 in the representation
-        if representation.get('community_reputation', 0) < 0:
-            representation['community_reputation'] = 0
+        # If the hive reputation is below 0, set it to 0 in the representation
+        if representation.get('hive_reputation', 0) < 0:
+            representation['hive_reputation'] = 0
         
         return representation
     
@@ -182,7 +182,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     answer_info = AnswerSerializer(source='answer', read_only=True)
     comment_info = CommentSerializer(source='comment', read_only=True)
     actor_info = UserSerializer(source='actor', read_only=True)
-    community_info = CommunitySerializer(source='community', read_only=True)
+    hive_info = HiveSerializer(source='hive', read_only=True)
 
     class Meta:
         model = Notifications

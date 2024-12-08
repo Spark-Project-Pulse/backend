@@ -41,14 +41,14 @@ class Votes(models.Model):
         db_table = 'Votes'
         unique_together = ('user', 'answer')
         
-class Communities(models.Model):
-    community_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Hives(models.Model):
+    hive_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)
     title = models.TextField(unique=True)
     description = models.TextField()
     member_count = models.BigIntegerField(default=0)
     avatar_url = models.URLField(blank=True, null=True)
-    tags = models.ManyToManyField('Tags', related_name='communities', blank=True)
+    tags = models.ManyToManyField('Tags', related_name='hives', blank=True)
     approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -56,7 +56,7 @@ class Communities(models.Model):
 
     # Add search functionality once that is complete
     class Meta:
-        db_table = 'Communities'
+        db_table = 'Hives'
         indexes = [
             GinIndex(fields=['search_vector']),  # GIN index
         ]  
@@ -79,11 +79,11 @@ class Communities(models.Model):
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                UPDATE "Communities"
+                UPDATE "Hives"
                 SET search_vector = to_tsvector('english', %s)
-                WHERE community_id = %s
+                WHERE hive_id = %s
                 """,
-                [combined_text, str(self.community_id)]
+                [combined_text, str(self.hive_id)]
             )
 
 class Badge(models.Model):
@@ -132,7 +132,7 @@ class Questions(models.Model):
     question_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     asker = models.ForeignKey('Users', on_delete=models.SET_NULL, blank=True, null=True)
     related_project = models.ForeignKey(Projects, on_delete=models.SET_NULL, blank=True, null=True)
-    related_community = models.ForeignKey(Communities, on_delete=models.SET_NULL, blank=True, null=True)
+    related_hive = models.ForeignKey(Hives, on_delete=models.SET_NULL, blank=True, null=True)
     code_context = models.TextField(blank=True, null=True)
     code_context_full_pathname = models.TextField(blank=True, null=True)
     code_context_line_number = models.IntegerField(blank=True, null=True)
@@ -271,16 +271,16 @@ class Comments(models.Model):
     class Meta:
         db_table = 'Comments'
 
-class CommunityMembers(models.Model):
-    community = models.ForeignKey('Communities', on_delete=models.CASCADE)  # delete user from community if community is deleted
-    user = models.ForeignKey('Users', on_delete=models.CASCADE)  # delete user from community if user is removed
-    community_reputation = models.BigIntegerField(default=0)
+class HiveMembers(models.Model):
+    hive = models.ForeignKey('Hives', on_delete=models.CASCADE)  # delete user from hive if hive is deleted
+    user = models.ForeignKey('Users', on_delete=models.CASCADE)  # delete user from hive if user is removed
+    hive_reputation = models.BigIntegerField(default=0)
     contributions = models.BigIntegerField(default=0)
 
     class Meta:
-        db_table = 'CommunityMembers'
+        db_table = 'HiveMembers'
         constraints = [
-            models.UniqueConstraint(fields=['community', 'user'], name='unique_community_user')
+            models.UniqueConstraint(fields=['hive', 'user'], name='unique_hive_user')
         ]
 
 
@@ -291,8 +291,8 @@ class Notifications(models.Model):
         ('question_upvoted', 'Answer Accepted'),
         ('answer_accepted', 'Mention'),
         ('mention', 'Vote Received'),
-        ('community_accepted', 'Community Accepted'),
-        ('community_rejected', 'Community Rejected'),
+        ('hive_accepted', 'Hive Accepted'),
+        ('hive_rejected', 'Hive Rejected'),
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -303,8 +303,8 @@ class Notifications(models.Model):
     question = models.ForeignKey('Questions', on_delete=models.CASCADE, null=True, blank=True)
     answer = models.ForeignKey('Answers', on_delete=models.CASCADE, null=True, blank=True)
     comment = models.ForeignKey('Comments', on_delete=models.CASCADE, null=True, blank=True)
-    community = models.ForeignKey('Communities', on_delete=models.CASCADE, null=True, blank=True)
-    community_title = models.TextField(null=True, blank=True)
+    hive = models.ForeignKey('Hives', on_delete=models.CASCADE, null=True, blank=True)
+    hive_title = models.TextField(null=True, blank=True)
     actor = models.ForeignKey('Users', on_delete=models.SET_NULL, null=True, related_name='notifications_triggered')
     
     message = models.TextField()

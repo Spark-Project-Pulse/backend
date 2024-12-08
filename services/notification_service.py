@@ -1,7 +1,7 @@
 # services/notification_service.py
 from typing import Optional
 from django.db import transaction
-from pulse.models import Notifications, Questions, Answers, Comments, Communities
+from pulse.models import Notifications, Questions, Answers, Comments, Hives
 from uuid import UUID
 
 
@@ -14,8 +14,8 @@ class NotificationService:
         'question_upvoted': 'Your question was upvoted',
         'answer_accepted': 'Your answer was accepted',
         'mention': 'You were mentioned in a {content_type}',
-        'community_accepted': 'Your community application was accepted',
-        'community_rejected': 'Your community application was rejected',
+        'hive_accepted': 'Your hive application was accepted',
+        'hive_rejected': 'Your hive application was rejected',
     }
 
     @classmethod
@@ -27,8 +27,8 @@ class NotificationService:
         question: Optional['Questions'] = None,
         answer: Optional['Answers'] = None,
         comment: Optional['Comments'] = None,
-        community: Optional['Communities'] = None,
-        community_title: Optional[str] = None,
+        hive: Optional['Hives'] = None,
+        hive_title: Optional[str] = None,
         actor_id: Optional[str] = None,
         message: Optional[str] = None,
     ) -> Notifications:
@@ -41,8 +41,8 @@ class NotificationService:
             question: Related question (optional)
             answer: Related answer (optional)
             comment: Related comment (optional)
-            community: Related community (optional)
-            community_title: Title of the community (optional)
+            hive: Related hive (optional)
+            hive_title: Title of the hive (optional)
             actor_id: ID of the user who triggered the notification (optional)
             message: Custom message (optional, will use default if not provided)
         """
@@ -67,8 +67,8 @@ class NotificationService:
             question=question,
             answer=answer,
             comment=comment,
-            community=community,
-            community_title=community_title,
+            hive=hive,
+            hive_title=hive_title,
             read=False
         )
         
@@ -89,22 +89,22 @@ class NotificationService:
             )
         
     @classmethod
-    def handle_community_accepted(cls, community: 'Communities') -> None:
-        """Handle notifications for a community application being accepted."""
+    def handle_hive_accepted(cls, hive: 'Hives') -> None:
+        """Handle notifications for a hive application being accepted."""
         cls.create_notification(
-            recipient_id=community.owner,
-            notification_type='community_accepted',
-            community=community
+            recipient_id=hive.owner,
+            notification_type='hive_accepted',
+            hive=hive
         )
         
     @classmethod
-    def handle_community_rejected(cls, user_id: str, community_title: str) -> None:
-        """Handle notifications for a community application being rejected.
-        Cannot include the community object since it was deleted."""
+    def handle_hive_rejected(cls, user_id: str, hive_title: str) -> None:
+        """Handle notifications for a hive application being rejected.
+        Cannot include the hive object since it was deleted."""
         cls.create_notification(
             recipient_id=user_id,
-            notification_type='community_rejected',
-            community_title=community_title
+            notification_type='hive_rejected',
+            hive_title=hive_title
         )
         
 
