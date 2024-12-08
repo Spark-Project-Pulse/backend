@@ -189,3 +189,31 @@ def updateProfileImageById(request: HttpRequest, user_id: str) -> JsonResponse:
         return JsonResponse(serializer.data, status=status.HTTP_200_OK)
     else:
         return JsonResponse({"error": "Failed to upload image"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+'''DELETE Operations'''
+
+@api_view(["DELETE"])
+def deleteUserById(request: HttpRequest, user_id: str) -> JsonResponse:
+    """
+    Delete a user by their ID.
+
+    Args:
+        request (HttpRequest): The incoming HTTP request.
+        user_id (str): The ID of the user to delete.
+
+    Returns:
+        JsonResponse: A response indicating the success of the deletion or an error message.
+    """
+    try:
+        # Get the user or return 404
+        user = get_object_or_404(Users, user_id=user_id)
+        
+        # Delete the user
+        user.delete()
+        
+        return JsonResponse({"message": f"User with ID {user_id} has been deleted."}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An error occurred while deleting the user", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

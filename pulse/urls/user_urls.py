@@ -16,4 +16,7 @@ urlpatterns = [
     
     # PUT Requests
     path('updateProfileImageById/<str:user_id>/', user_views.updateProfileImageById, name="updateProfileImage"),
+    
+    # DELETE Requests
+    path('delete/<str:user_id>/', user_views.deleteUserById, name='deleteUser'),
 ]
