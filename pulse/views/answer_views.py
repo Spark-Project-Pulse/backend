@@ -4,7 +4,7 @@ from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
 from services.ai_model_service import check_content
-from ..models import Answers, CommunityMembers, Votes, Users
+from ..models import Answers, HiveMembers, Votes, Users
 from ..serializers import AnswerSerializer
 from services.notification_service import NotificationService
 
@@ -13,7 +13,7 @@ from services.notification_service import NotificationService
 @api_view(["POST"])
 def createAnswer(request: HttpRequest) -> JsonResponse:
     """
-    Create an answer and increment contributions if the user is a member of the related community.
+    Create an answer and increment contributions if the user is a member of the related hive.
     
     Returns:
         JsonResponse:
@@ -29,20 +29,20 @@ def createAnswer(request: HttpRequest) -> JsonResponse:
 
         NotificationService.handle_new_answer(answer) # Handle notifications
 
-        # Check if the question has a related community
+        # Check if the question has a related hive
         question = answer.question
-        if question.related_community and answer.expert:
-            community = question.related_community
+        if question.related_hive and answer.expert:
+            hive = question.related_hive
             user = answer.expert
 
-            # Check if the user is a member of the community
+            # Check if the user is a member of the hive
             try:
-                community_member = CommunityMembers.objects.get(community=community, user=user)
+                hive_member = HiveMembers.objects.get(hive=hive, user=user)
                 
                 # Increment contributions if the user is a member
-                community_member.contributions += 1
-                community_member.save()
-            except CommunityMembers.DoesNotExist:
+                hive_member.contributions += 1
+                hive_member.save()
+            except HiveMembers.DoesNotExist:
                 # If the user is not a member, do nothing
                 pass
 
@@ -68,7 +68,7 @@ def upvoteAnswer(request: HttpRequest) -> JsonResponse:
         existing_vote.delete()
         answer.score -= 1
         answer.save()
-        adjust_community_reputation(answer, question, -1)
+        adjust_hive_reputation(answer, question, -1)
         return JsonResponse({"message": "Upvote removed", "new_score": answer.score}, status=status.HTTP_200_OK)
     
     if existing_vote and existing_vote.vote_type == 'downvote':
@@ -76,14 +76,14 @@ def upvoteAnswer(request: HttpRequest) -> JsonResponse:
         Votes.objects.create(user=user, answer=answer, vote_type='upvote')
         answer.score += 2
         answer.save()
-        adjust_community_reputation(answer, question, 2)
+        adjust_hive_reputation(answer, question, 2)
         return JsonResponse({"message": "Vote switched to upvote", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     # Record a new upvote
     Votes.objects.create(user=user, answer=answer, vote_type='upvote')
     answer.score += 1
     answer.save()
-    adjust_community_reputation(answer, question, 1)
+    adjust_hive_reputation(answer, question, 1)
     return JsonResponse({"message": "Upvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
@@ -103,7 +103,7 @@ def downvoteAnswer(request: HttpRequest) -> JsonResponse:
         existing_vote.delete()
         answer.score += 1
         answer.save()
-        adjust_community_reputation(answer, question, 1)
+        adjust_hive_reputation(answer, question, 1)
         return JsonResponse({"message": "Downvote removed", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     if existing_vote and existing_vote.vote_type == 'upvote':
@@ -111,14 +111,14 @@ def downvoteAnswer(request: HttpRequest) -> JsonResponse:
         Votes.objects.create(user=user, answer=answer, vote_type='downvote')
         answer.score -= 2
         answer.save()
-        adjust_community_reputation(answer, question, -2)
+        adjust_hive_reputation(answer, question, -2)
         return JsonResponse({"message": "Vote switched to downvote", "new_score": answer.score}, status=status.HTTP_200_OK)
 
     # Record a new downvote
     Votes.objects.create(user=user, answer=answer, vote_type='downvote')
     answer.score -= 1
     answer.save()
-    adjust_community_reputation(answer, question, -1)
+    adjust_hive_reputation(answer, question, -1)
     return JsonResponse({"message": "Downvote successful", "new_score": answer.score}, status=status.HTTP_200_OK)
 
 '''----- GET REQUESTS -----'''
@@ -154,23 +154,23 @@ def getAnswersByQuestionIdWithUser(request: HttpRequest, question_id: str, user_
 
 '''----- HELPER FUNCTIONS -----'''
 
-def adjust_community_reputation(answer, question, reputation_change):
+def adjust_hive_reputation(answer, question, reputation_change):
     """
-    Adjusts the community reputation of the answer's author based on the reputation change value
-    only if they are already a member of the community.
+    Adjusts the hive reputation of the answer's author based on the reputation change value
+    only if they are already a member of the hive.
     """
-    # Check if the question is related to a community and the answer's author is defined
-    if question.related_community and answer.expert:
-        community = question.related_community
+    # Check if the question is related to a hive and the answer's author is defined
+    if question.related_hive and answer.expert:
+        hive = question.related_hive
         user = answer.expert
 
-        # Check if the user is already a member of the community
+        # Check if the user is already a member of the hive
         try:
-            community_member = CommunityMembers.objects.get(community=community, user=user)
+            hive_member = HiveMembers.objects.get(hive=hive, user=user)
             
-            # Update the community reputation if the user is a member
-            community_member.community_reputation += reputation_change
-            community_member.save()
-        except CommunityMembers.DoesNotExist:
-            # If the user is not a member of the community, do nothing
+            # Update the hive reputation if the user is a member
+            hive_member.hive_reputation += reputation_change
+            hive_member.save()
+        except HiveMembers.DoesNotExist:
+            # If the user is not a member of the hive, do nothing
             pass

@@ -4,8 +4,8 @@ from django.http import JsonResponse, HttpRequest
 from django.http import JsonResponse
 from rest_framework import status
 from django.conf import settings
-from ..models import Communities, CommunityMembers, Users, UserRoles
-from ..serializers import CommunitySerializer, CommunityMemberSerializer
+from ..models import Hives, HiveMembers, Users, UserRoles
+from ..serializers import HiveSerializer, HiveMemberSerializer
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count, Q
@@ -28,20 +28,20 @@ from django.views.decorators.http import require_GET
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser])  # To handle file uploads
-def createCommunityRequest(request: HttpRequest) -> JsonResponse:
+def createHiveRequest(request: HttpRequest) -> JsonResponse:
     """
-    Create a community request using the CommunitySerializer to validate
+    Create a hive request using the HiveSerializer to validate
     and save the incoming data.
 
     Args:
         request (HttpRequest): The incoming HTTP request containing the data.
 
     Returns:
-        JsonResponse: A response with the requested community ID if successful,
+        JsonResponse: A response with the requested hive ID if successful,
         or validation errors if the data is invalid.
     """
     # Deserialize and validate the data
-    serializer = CommunitySerializer(data=request.data)
+    serializer = HiveSerializer(data=request.data)
     if not serializer.is_valid():
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -49,10 +49,10 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
     title = request.data['title']
     description = request.data['description']
     if check_content(title + description):
-        return JsonResponse({"error": "Toxic content detected in your community."}, status=status.HTTP_200_OK)
+        return JsonResponse({"error": "Toxic content detected in your hive."}, status=status.HTTP_200_OK)
     
-    # Save the valid data as a new Community instance
-    community = serializer.save()
+    # Save the valid data as a new Hive instance
+    hive = serializer.save()
     
     # Handle the optional image upload
     avatar_file = request.FILES.get('avatar')
@@ -65,158 +65,158 @@ def createCommunityRequest(request: HttpRequest) -> JsonResponse:
         supabase = get_supabase_client()
 
         # Create bucket if it does not exist
-        if not create_bucket_if_not_exists('community-avatars'):
+        if not create_bucket_if_not_exists('hive-avatars'):
             return JsonResponse({'error': 'Could not ensure bucket exists.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set the upload path in Supabase Storage
-        upload_path = f"{community.community_id}/avatar"
+        upload_path = f"{hive.hive_id}/avatar"
 
         # Upload the image file to Supabase Storage
-        response = supabase.storage.from_("community-avatars").upload(
+        response = supabase.storage.from_("hive-avatars").upload(
             path=upload_path,
             file=image_content,
             file_options={"content-type": avatar_file.content_type, "upsert": "true"}
         )
 
         if response.path:
-            # Store the image URL in the community's data
-            community.avatar_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/community-avatars/{upload_path}"
-            community.save()
+            # Store the image URL in the hive's data
+            hive.avatar_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/hive-avatars/{upload_path}"
+            hive.save()
         else:
-            return JsonResponse({"error": "Failed to upload community avatar"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({"error": "Failed to upload hive avatar"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return JsonResponse(
-        {"community_id": community.community_id, "title": community.title},
+        {"hive_id": hive.hive_id, "title": hive.title},
         status=status.HTTP_201_CREATED
     )
 
 @api_view(["POST"])
-def approveCommunityRequest(request: HttpRequest) -> JsonResponse:
+def approveHiveRequest(request: HttpRequest) -> JsonResponse:
     """
-    Approve a community request by setting approved=True. 
-    Adds the owner as a community member if approval is successful.
+    Approve a hive request by setting approved=True. 
+    Adds the owner as a hive member if approval is successful.
 
     Args:
-        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
+        request (HttpRequest): The incoming HTTP request containing hive_id and user_id.
 
     Returns:
         JsonResponse: A success message or an error message.
     """
-    # Extract community_id and role from the request body
-    community_id = request.data.get('community_id')
+    # Extract hive_id and role from the request body
+    hive_id = request.data.get('hive_id')
     user_id = request.data.get('user_id')
     
-    # Get the community or return 404 if not found
-    community = get_object_or_404(Communities, community_id=community_id, approved=False)
+    # Get the hive or return 404 if not found
+    hive = get_object_or_404(Hives, hive_id=hive_id, approved=False)
     user_role = get_object_or_404(UserRoles, role=user_id).role_type
     
     # Check if the user has admin privileges
     if user_role != 'admin':
         return JsonResponse({"error": "Unauthorized: Admin privileges required"}, status=status.HTTP_403_FORBIDDEN)
 
-    # Approve the community request
-    community.approved = True
-    community.save()
+    # Approve the hive request
+    hive.approved = True
+    hive.save()
 
-    # Add the owner to CommunityMembers if there is an owner
-    if community.owner:
-        CommunityMembers.objects.create(community=community, user=community.owner)
-        community.member_count += 1  # Increment member count by 1
-        NotificationService.handle_community_accepted(community) # Handle notifications
-        community.save()
+    # Add the owner to HiveMembers if there is an owner
+    if hive.owner:
+        HiveMembers.objects.create(hive=hive, user=hive.owner)
+        hive.member_count += 1  # Increment member count by 1
+        NotificationService.handle_hive_accepted(hive) # Handle notifications
+        hive.save()
         
-    return JsonResponse({"message": "Community request approved successfully"}, status=status.HTTP_200_OK)
+    return JsonResponse({"message": "Hive request approved successfully"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-def rejectCommunityRequest(request: HttpRequest) -> JsonResponse:
+def rejectHiveRequest(request: HttpRequest) -> JsonResponse:
     """
-    Reject a community request by deleting the community from the database.
+    Reject a hive request by deleting the hive from the database.
 
     Args:
-        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
+        request (HttpRequest): The incoming HTTP request containing hive_id and user_id.
 
     Returns:
         JsonResponse: A success message or an error message.
     """
-    # Extract community_id and role from the request body
-    community_id = request.data.get('community_id')
+    # Extract hive_id and role from the request body
+    hive_id = request.data.get('hive_id')
     user_id = request.data.get('user_id')
     
-    # Get the community or return 404 if not found
-    community = get_object_or_404(Communities, community_id=community_id, approved=False)
+    # Get the hive or return 404 if not found
+    hive = get_object_or_404(Hives, hive_id=hive_id, approved=False)
     user_role = get_object_or_404(UserRoles, role=user_id).role_type
     
     # Check if the user has admin privileges
     if user_role != 'admin':
         return JsonResponse({"error": "Unauthorized: Admin privileges required"}, status=status.HTTP_403_FORBIDDEN)
     
-    # Get the community or return 404 if not found
-    community = get_object_or_404(Communities, community_id=community_id, approved=False)
-    NotificationService.handle_community_rejected(community.owner, community.title) # Handle notifications
+    # Get the hive or return 404 if not found
+    hive = get_object_or_404(Hives, hive_id=hive_id, approved=False)
+    NotificationService.handle_hive_rejected(hive.owner, hive.title) # Handle notifications
 
-    # Delete the community request
-    community.delete()
+    # Delete the hive request
+    hive.delete()
     
-    return JsonResponse({"message": "Community request rejected successfully"}, status=status.HTTP_200_OK)
+    return JsonResponse({"message": "Hive request rejected successfully"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-def addCommunityMember(request: HttpRequest) -> JsonResponse:
+def addHiveMember(request: HttpRequest) -> JsonResponse:
     """
     Add a member, increasing its member count by 1
-    and add them to the CommunityMembers table.
+    and add them to the HiveMembers table.
 
     Args:
-        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
+        request (HttpRequest): The incoming HTTP request containing hive_id and user_id.
 
     Returns:
         JsonResponse: Success message or error message.
     """
-    community_id = request.data.get('community_id')
+    hive_id = request.data.get('hive_id')
     user_id = request.data.get('user_id')
 
-    community = get_object_or_404(Communities, pk=community_id)
+    hive = get_object_or_404(Hives, pk=hive_id)
     user = get_object_or_404(Users, pk=user_id)
 
-    # Added the user to the community
-    CommunityMembers.objects.create(community=community, user=user)
-    community.member_count += 1  # Increment member count by 1
-    community.save()
+    # Added the user to the hive
+    HiveMembers.objects.create(hive=hive, user=user)
+    hive.member_count += 1  # Increment member count by 1
+    hive.save()
 
     return JsonResponse({"message": "Join successful"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-def removeCommunityMember(request: HttpRequest) -> JsonResponse:
+def removeHiveMember(request: HttpRequest) -> JsonResponse:
     """
     Remove a member, decreasing its member count by 1
-    and remove them from the CommunityMembers table.
+    and remove them from the HiveMembers table.
 
     Args:
-        request (HttpRequest): The incoming HTTP request containing community_id and user_id.
+        request (HttpRequest): The incoming HTTP request containing hive_id and user_id.
 
     Returns:
         JsonResponse: Success message or error message.
     """
-    community_id = request.data.get('community_id')
+    hive_id = request.data.get('hive_id')
     user_id = request.data.get('user_id')
 
-    community = get_object_or_404(Communities, pk=community_id)
+    hive = get_object_or_404(Hives, pk=hive_id)
     user = get_object_or_404(Users, pk=user_id)
     
-    existing_member = CommunityMembers.objects.filter(community=community, user=user).first()
+    existing_member = HiveMembers.objects.filter(hive=hive, user=user).first()
 
-    # Remove the user from the community
+    # Remove the user from the hive
     existing_member.delete()
-    community.member_count -= 1  # Decrement member count by 1
-    community.save()
+    hive.member_count -= 1  # Decrement member count by 1
+    hive.save()
 
     return JsonResponse({"message": "Remove successful"}, status=status.HTTP_200_OK)
 
 '''GET Requests'''
 
 @api_view(["GET"])
-def getAllCommunities(request: HttpRequest) -> JsonResponse:
+def getAllHives(request: HttpRequest) -> JsonResponse:
     """
-    Retrieve communities from the database with pagination, optional tag filtering, and search functionality.
+    Retrieve hives from the database with pagination, optional tag filtering, and search functionality.
     """
     # Get query parameters
     page_number = int(request.GET.get('page', 1))
@@ -224,19 +224,19 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
     search_query = request.GET.get('search', '').strip()
 
-    # Start with all approved communities, ordered by creation date descending
-    communities = Communities.objects.filter(approved=True)
+    # Start with all approved hives, ordered by creation date descending
+    hives = Hives.objects.filter(approved=True)
 
     # Apply search filter if search_query is provided
     if search_query:
         search_vector = SearchQuery(search_query, search_type='websearch')
-        communities = communities.annotate(
+        hives = hives.annotate(
             rank=SearchRank('search_vector', search_vector)
         ).filter(search_vector=search_vector).order_by('-rank', '-member_count')
     else:
-        communities = communities.order_by('-member_count')
+        hives = hives.order_by('-member_count')
 
-    # Filter communities by tags if any tags are provided
+    # Filter hives by tags if any tags are provided
     if selected_tags:
         # Convert tag IDs to UUID objects
         try:
@@ -245,36 +245,36 @@ def getAllCommunities(request: HttpRequest) -> JsonResponse:
             return JsonResponse({'error': 'Invalid tag IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
         num_selected_tags = len(selected_tags)
 
-        # Filter communities that have all of the selected tags
-        communities = communities.filter(tags__tag_id__in=selected_tags)
-        communities = communities.annotate(
+        # Filter hives that have all of the selected tags
+        hives = hives.filter(tags__tag_id__in=selected_tags)
+        hives = hives.annotate(
             matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
         ).filter(matching_tags=num_selected_tags)
 
     # Remove duplicates
-    communities = communities.distinct()
+    hives = hives.distinct()
 
     # Pagination
-    paginator = Paginator(communities, page_size)
+    paginator = Paginator(hives, page_size)
     try:
         page_obj = paginator.page(page_number)
     except EmptyPage:
         page_obj = []
 
-    serializer = CommunitySerializer(page_obj.object_list, many=True)
+    serializer = HiveSerializer(page_obj.object_list, many=True)
     
     response_data = {
-        'communities': serializer.data,
-        'totalCommunities': paginator.count,
+        'hives': serializer.data,
+        'totalHives': paginator.count,
         'totalPages': paginator.num_pages,
         'currentPage': page_number,
     }
     return JsonResponse(response_data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-def getAllCommunityOptions(request: HttpRequest) -> JsonResponse:
+def getAllHiveOptions(request: HttpRequest) -> JsonResponse:
     """
-    Retrieve all approved communties from the database and serialize them
+    Retrieve all approved hives from the database and serialize them
     to JSON format.
 
     Args:
@@ -283,116 +283,116 @@ def getAllCommunityOptions(request: HttpRequest) -> JsonResponse:
     Returns:
         Json
     """
-    communities = Communities.objects.filter(approved=True)
-    serializer = CommunitySerializer(communities, many=True)
+    hives = Hives.objects.filter(approved=True)
+    serializer = HiveSerializer(hives, many=True)
     return JsonResponse(serializer.data, safe=False)
 
 @api_view(["GET"])
-def getAllCommunityMembers(request: HttpRequest, community_id: str) -> JsonResponse:
+def getAllHiveMembers(request: HttpRequest, hive_id: str) -> JsonResponse:
     """
-    Get all community members by community ID.
+    Get all hive members by hive ID.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
-        community_id (str): The ID of the community.
+        hive_id (str): The ID of the hive.
 
     Returns:
-        JsonResponse: A response indicating whether the user is part of the community.
+        JsonResponse: A response indicating whether the user is part of the hive.
     """
-    # Validate community
-    community = get_object_or_404(Communities, community_id=community_id)
+    # Validate hive
+    hive = get_object_or_404(Hives, hive_id=hive_id)
 
-    # Get the users that are part of the community
-    members = CommunityMembers.objects.filter(community=community).order_by('-community_reputation')
+    # Get the users that are part of the hive
+    members = HiveMembers.objects.filter(hive=hive).order_by('-hive_reputation')
     
     # Serialize the list of members, setting many=True to indicate multiple objects
-    serializer = CommunityMemberSerializer(members, many=True)
+    serializer = HiveMemberSerializer(members, many=True)
 
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-def getCommunityById(request: HttpRequest, community_id: str) -> JsonResponse:
+def getHiveById(request: HttpRequest, hive_id: str) -> JsonResponse:
     """
-    Retrieve a single community by its ID and serialize it to JSON format.
+    Retrieve a single hive by its ID and serialize it to JSON format.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
-        community_id (str): The ID of the community to retrieve.
+        hive_id (str): The ID of the hive to retrieve.
 
     Returns:
-        JsonResponse: A response containing serialized data for the requested community.
+        JsonResponse: A response containing serialized data for the requested hive.
     """
-    community = get_object_or_404(Communities, community_id=community_id, approved=True)  # Get the community or return 404
-    serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
+    hive = get_object_or_404(Hives, hive_id=hive_id, approved=True)  # Get the hive or return 404
+    serializer = HiveSerializer(hive)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-def getCommunityByTitle(request: HttpRequest, title: str) -> JsonResponse:
+def getHiveByTitle(request: HttpRequest, title: str) -> JsonResponse:
     """
-    Retrieve a single community by its title and serialize it to JSON format.
+    Retrieve a single hive by its title and serialize it to JSON format.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
-        title (str): The title of the community to retrieve.
+        title (str): The title of the hive to retrieve.
 
     Returns:
-        JsonResponse: A response containing serialized data for the requested community.
+        JsonResponse: A response containing serialized data for the requested hive.
     """
-    community = get_object_or_404(Communities, title=title, approved=True)  # Get the community or return 404
-    serializer = CommunitySerializer(community)  # Serialize the single instance to JSON
+    hive = get_object_or_404(Hives, title=title, approved=True)  # Get the hive or return 404
+    serializer = HiveSerializer(hive)  # Serialize the single instance to JSON
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-def getUserCommunitiesById(request: HttpRequest, user_id: str) -> JsonResponse:
+def getUserHivesById(request: HttpRequest, user_id: str) -> JsonResponse:
     """
-    Retrieve all communities associated with a user's ID and return them in JSON format.
+    Retrieve all hives associated with a user's ID and return them in JSON format.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
-        user_id (str): The ID of the user whose communities are to be retrieved.
+        user_id (str): The ID of the user whose hives are to be retrieved.
 
     Returns:
-        JsonResponse: A response containing serialized data for the user's communities.
+        JsonResponse: A response containing serialized data for the user's hives.
     """
-    communities = get_list_or_404(CommunityMembers, user=user_id)
-    serializer = CommunityMemberSerializer(communities, many=True)  # Serialize multiple instances
+    hives = get_list_or_404(HiveMembers, user=user_id)
+    serializer = HiveMemberSerializer(hives, many=True)  # Serialize multiple instances
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-def getAllCommunityRequests(request: HttpRequest) -> JsonResponse:
+def getAllHiveRequests(request: HttpRequest) -> JsonResponse:
     """
-    Retrieve all community requests that are not yet approved, ordered by the oldest first.
+    Retrieve all hive requests that are not yet approved, ordered by the oldest first.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
 
     Returns:
-        JsonResponse: A response with a list of community requests.
+        JsonResponse: A response with a list of hive requests.
     """
-    # Filter for communities where approved is False and order by created_at (oldest first)
-    community_requests = Communities.objects.filter(approved=False).order_by('created_at')
-    serializer = CommunitySerializer(community_requests, many=True)
+    # Filter for hives where approved is False and order by created_at (oldest first)
+    hive_requests = Hives.objects.filter(approved=False).order_by('created_at')
+    serializer = HiveSerializer(hive_requests, many=True)
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-def userIsPartOfCommunity(request: HttpRequest, title: str, user_id: str) -> JsonResponse:
+def userIsPartOfHive(request: HttpRequest, title: str, user_id: str) -> JsonResponse:
     """
-    Check if a user is part of a community by community title and user ID.
+    Check if a user is part of a hive by hive title and user ID.
 
     Args:
         request (HttpRequest): The incoming HTTP request.
-        title (str): The title of the community.
+        title (str): The title of the hive.
         user_id (str): The ID of the user.
 
     Returns:
-        JsonResponse: A response indicating whether the user is part of the community.
+        JsonResponse: A response indicating whether the user is part of the hive.
     """
-    # Validate community and user
-    community = get_object_or_404(Communities, title=title)
+    # Validate hive and user
+    hive = get_object_or_404(Hives, title=title)
     user = get_object_or_404(Users, pk=user_id)
 
-    # Check if the user is part of the community
-    is_member = CommunityMembers.objects.filter(community=community, user=user).exists()
+    # Check if the user is part of the hive
+    is_member = HiveMembers.objects.filter(hive=hive, user=user).exists()
 
     return JsonResponse({"is_member": is_member}, status=status.HTTP_200_OK)
 
@@ -405,7 +405,7 @@ class BurstAnonRateThrottle(AnonRateThrottle):
 @require_GET
 @csrf_exempt
 @throttle_classes([BurstUserRateThrottle, BurstAnonRateThrottle])
-def searchCommunities(request):
+def searchHives(request):
     # Get query parameters
     query = request.GET.get('q', '').strip()
     tags = request.GET.getlist('tags')  # Expecting tag IDs as strings
@@ -418,7 +418,7 @@ def searchCommunities(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    communities = Communities.objects.all()
+    hives = Hives.objects.all()
 
     # Initialize combined_filters as Q() for AND logic
     combined_filters = Q()
@@ -434,7 +434,7 @@ def searchCommunities(request):
         search_query = SearchQuery(query, search_type="websearch")
         
         # Annotate with full-text search rank and trigram similarities
-        communities = communities.annotate(
+        hives = hives.annotate(
             rank=SearchRank(search_vector, search_query),
             similarity_title=TrigramSimilarity('title', query),
             similarity_description=TrigramSimilarity('description', query),
@@ -470,7 +470,7 @@ def searchCommunities(request):
         combined_filters &= tag_filters
 
     # Apply the combined AND filters
-    communities = communities.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
+    hives = hives.filter(combined_filters).distinct().order_by('-rank', '-total_similarity', '-created_at')
 
     # Implement Pagination
     try:
@@ -481,18 +481,18 @@ def searchCommunities(request):
     except ValueError:
         return JsonResponse({'error': 'Invalid page or page_size parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    paginator = Paginator(communities, page_size)
+    paginator = Paginator(hives, page_size)
     try:
-        paginated_communities = paginator.page(page_number)
+        paginated_hives = paginator.page(page_number)
     except PageNotAnInteger:
-        paginated_communities = paginator.page(1)
+        paginated_hives = paginator.page(1)
     except EmptyPage:
-        paginated_communities = paginator.page(paginator.num_pages)
+        paginated_hives = paginator.page(paginator.num_pages)
 
-    serializer = CommunitySerializer(paginated_communities.object_list, many=True)
+    serializer = HiveSerializer(paginated_hives.object_list, many=True)
     return JsonResponse({
-        'communities': serializer.data,
-        'totalCommunities': paginator.count,
+        'hives': serializer.data,
+        'totalHives': paginator.count,
         'totalPages': paginator.num_pages,
         'currentPage': page_number,
     }, status=status.HTTP_200_OK)
