@@ -58,18 +58,18 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     page_size = int(request.GET.get('page_size', 20))
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
     search_query = request.GET.get('search', '').strip()
-    related_community_id = request.GET.get('related_community_id', None)
+    related_hive_id = request.GET.get('related_hive_id', None)  # Optional hive filter
     sort_by = request.GET.get('sort_by', 'Recency')  # Default to recency
 
     # Start with all questions
     questions = Questions.objects.all()
 
-    # Filter by community if related_community_id is provided
-    if related_community_id:
+    # Filter by hive if related_hive_id is provided
+    if related_hive_id:
         try:
-            questions = questions.filter(related_community__community_id=related_community_id)
+            questions = questions.filter(related_hive__hive_id=related_hive_id)
         except ValueError:
-            return JsonResponse({'error': 'Invalid community ID provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'error': 'Invalid hive ID provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Apply search filter if search_query is provided
     if search_query:

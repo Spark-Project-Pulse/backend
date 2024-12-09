@@ -242,11 +242,11 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    ```
 
    ``` sql
-   -- create community-avatars bucket
+   -- create hive-avatars bucket
    insert into storage.buckets
     (id, name, public)
    values
-    ('community-avatars', 'community-avatars', true);
+    ('hive-avatars', 'hive-avatars', true);
    ```
 
    ``` sql
@@ -258,11 +258,11 @@ This project uses a combination of `Django`'s built in **ORM** and `supabase` to
    ```
 
    ``` sql
-   -- enable uploading to the community-avatars bucklet
-   CREATE POLICY "Allow all on community-avatars" 
+   -- enable uploading to the hive-avatars bucklet
+   CREATE POLICY "Allow all on hive-avatars" 
    ON storage.objects
    FOR ALL
-   USING (bucket_id = 'community-avatars');
+   USING (bucket_id = 'hive-avatars');
    ```
 
    ``` sql
