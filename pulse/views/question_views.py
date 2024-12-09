@@ -59,7 +59,7 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
     search_query = request.GET.get('search', '').strip()
     related_community_id = request.GET.get('related_community_id', None)
-    sort_by = request.GET.get('sort_by', 'recency')  # Default to recency
+    sort_by = request.GET.get('sort_by', 'Recency')  # Default to recency
 
     # Start with all questions
     questions = Questions.objects.all()
