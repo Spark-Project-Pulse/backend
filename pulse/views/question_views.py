@@ -51,6 +51,7 @@ def createQuestion(request: HttpRequest) -> JsonResponse:
 def getAllQuestions(request: HttpRequest) -> JsonResponse:
     """
     Retrieve questions from the database with pagination, optional tag filtering, and search functionality.
+    Supports sorting by views, recency, or unanswered questions first.
     """
     # Get query parameters
     page_number = int(request.GET.get('page', 1))
@@ -58,10 +59,11 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
     selected_tags = request.GET.getlist('tags')  # Expecting UUIDs like ?tags=uuid1&tags=uuid2
     search_query = request.GET.get('search', '').strip()
     related_hive_id = request.GET.get('related_hive_id', None)  # Optional hive filter
+    sort_by = request.GET.get('sort_by', 'Recency')  # Default to recency
 
-    # Start with all questions, ordered by creation date descending
+    # Start with all questions
     questions = Questions.objects.all()
-    
+
     # Filter by hive if related_hive_id is provided
     if related_hive_id:
         try:
@@ -74,13 +76,10 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
         search_vector = SearchQuery(search_query, search_type='websearch')
         questions = questions.annotate(
             rank=SearchRank('search_vector', search_vector)
-        ).filter(search_vector=search_vector).order_by('-rank', '-created_at')
-    else:
-        questions = questions.order_by('-created_at')
+        ).filter(search_vector=search_vector)
 
     # Filter questions by tags if any tags are provided
     if selected_tags:
-        # Convert tag IDs to UUID objects
         try:
             selected_tags = [UUID(tag_id) for tag_id in selected_tags]
         except ValueError:
@@ -92,6 +91,19 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
         questions = questions.annotate(
             matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
         ).filter(matching_tags=num_selected_tags)
+
+    # Apply the unanswered filter for 'unanswered' sort
+    if sort_by == 'unanswered':
+        questions = questions.filter(is_answered=False).order_by('-created_at')
+
+
+    # Apply sorting logic
+    if sort_by == 'Recency':
+        questions = questions.order_by('-created_at')
+    elif sort_by == 'Trending':
+        questions = questions.order_by('-view_count')
+    elif sort_by != 'Unanswered':  # If sort_by is invalid and not 'unanswered'
+        return JsonResponse({'error': 'Invalid sort option'}, status=400)
 
     # Remove duplicates
     questions = questions.distinct()
@@ -111,6 +123,9 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
         'currentPage': page_number,
     }
     return JsonResponse(response_data, status=status.HTTP_200_OK)
+
+
+
 
 
 @api_view(["GET"])
@@ -147,11 +162,19 @@ def getQuestionById(request: HttpRequest, question_id: str) -> JsonResponse:
     Returns:
         JsonResponse: A response containing serialized data for the requested question.
     """
-    question = get_object_or_404(
-        Questions, question_id=question_id
-    )  # Get the question or return 404
-    serializer = QuestionSerializer(question)  # Serialize the single instance to JSON
+    # Get the question or return 404
+    question = get_object_or_404(Questions, question_id=question_id)
+
+    # increase view count
+    Questions.objects.filter(question_id=question_id).update(view_count=F('view_count') + 1)
+
+    # refresh the question instance to reflect the updated view count
+    question.refresh_from_db()
+
+    # Serialize the single instance to JSON
+    serializer = QuestionSerializer(question)
     return JsonResponse(serializer.data, status=status.HTTP_200_OK)
+
 
 # logger = logging.getLogger(__name__)
 
