@@ -9,7 +9,7 @@ from .question_urls import urlpatterns as question_urls
 from .user_urls import urlpatterns as user_urls
 from .tag_urls import urlpatterns as tag_urls
 from .comment_urls import urlpatterns as comment_urls
-from .community_urls import urlpatterns as community_urls
+from .hive_urls import urlpatterns as hive_urls
 from .notification_urls import urlpatterns as notification_urls
 from .badge_urls import urlpatterns as badge_urls
 
@@ -21,7 +21,7 @@ urlpatterns = [
     path('users/', include(user_urls)),
     path('tags/', include (tag_urls)),
     path('comments/', include(comment_urls)),
-    path('communities/', include(community_urls)),
+    path('hives/', include(hive_urls)),
     path('notifications/', include(notification_urls)),
     path('badges/', include(badge_urls)),
 ]

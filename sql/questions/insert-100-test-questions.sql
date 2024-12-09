@@ -3,7 +3,7 @@ INSERT INTO "Questions" (
     question_id,
     asker_id,
     related_project_id,
-    related_community_id,
+    related_hive_id,
     title,
     description,
     created_at,
@@ -27,16 +27,16 @@ SELECT uuid_generate_v4() AS question_id,
     ORDER BY RANDOM()
     LIMIT 1
   ) AS related_project_id,
-  -- Select a random existing related_community_id from Communities or set to NULL (80% chance of assignment)
+  -- Select a random existing related_hive_id from Hives or set to NULL (80% chance of assignment)
   CASE
     WHEN random() < 0.8 THEN (
-      SELECT community_id
-      FROM "Communities"
+      SELECT hive_id
+      FROM "Hives"
       ORDER BY RANDOM()
       LIMIT 1
     )
     ELSE NULL
-  END AS related_community_id,
+  END AS related_hive_id,
   -- Generate Title
   CONCAT('Test Question ', gs) AS title,
   -- Generate Description
