@@ -98,11 +98,11 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
 
 
     # Apply sorting logic
-    if sort_by == 'recency':
+    if sort_by == 'Recency':
         questions = questions.order_by('-created_at')
-    elif sort_by == 'views':
+    elif sort_by == 'Trending':
         questions = questions.order_by('-view_count')
-    elif sort_by != 'unanswered':  # If sort_by is invalid and not 'unanswered'
+    elif sort_by != 'Unanswered':  # If sort_by is invalid and not 'unanswered'
         return JsonResponse({'error': 'Invalid sort option'}, status=400)
 
     # Remove duplicates
