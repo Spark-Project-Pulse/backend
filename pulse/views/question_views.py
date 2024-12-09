@@ -92,15 +92,18 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
             matching_tags=Count('tags', filter=Q(tags__tag_id__in=selected_tags), distinct=True)
         ).filter(matching_tags=num_selected_tags)
 
+    # Apply the unanswered filter for 'unanswered' sort
+    if sort_by == 'unanswered':
+        questions = questions.filter(is_answered=False).order_by('-created_at')
+
+
     # Apply sorting logic
-    if sort_by == 'views':
-        questions = questions.order_by('-view_count', '-created_at')
-    elif sort_by == 'unanswered':
-        questions = questions.order_by('is_answered', '-created_at')  # Unanswered first
-    elif sort_by == 'answered':
-        questions = questions.order_by('-is_answered', '-created_at')  # Answered first
-    else:  # Default to sorting by recency
+    if sort_by == 'recency':
         questions = questions.order_by('-created_at')
+    elif sort_by == 'views':
+        questions = questions.order_by('-view_count')
+    elif sort_by != 'unanswered':  # If sort_by is invalid and not 'unanswered'
+        return JsonResponse({'error': 'Invalid sort option'}, status=400)
 
     # Remove duplicates
     questions = questions.distinct()
@@ -120,6 +123,8 @@ def getAllQuestions(request: HttpRequest) -> JsonResponse:
         'currentPage': page_number,
     }
     return JsonResponse(response_data, status=status.HTTP_200_OK)
+
+
 
 
 
